@@ -26,7 +26,7 @@
   },
   "homepage": "https://transcript1.com/docs/sdk",
   "bugs": {
-    "email": "support@one1.dev"
+    "email": "support@transcript1.com"
   },
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
