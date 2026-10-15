@@ -19,6 +19,16 @@ export const createStreamSource = (name: string, input: StreamInputType, total: 
   let consumed = 0;
   let queue: Promise<unknown> = Promise.resolve();
   let closed = false;
+  let signalClosed: () => void = () => undefined;
+  const whenClosed = new Promise<never>((_, reject) => {
+    signalClosed = () => {
+      reject(new Error(`${name}: the source is closed`));
+    };
+  });
+  whenClosed.catch(() => null);
+
+  // a stalled stream never answers, closing ends the read
+  const pullPiece = async (): Promise<Uint8Array | undefined> => Promise.race([pieces.next(), whenClosed]);
 
   const readPiece = async (): Promise<Uint8Array | undefined> => {
     const kept = leftover.shift();
@@ -26,10 +36,10 @@ export const createStreamSource = (name: string, input: StreamInputType, total: 
       return kept;
     }
 
-    let piece = await pieces.next();
+    let piece = await pullPiece();
     while (piece?.byteLength === 0) {
       // eslint-disable-next-line no-await-in-loop
-      piece = await pieces.next();
+      piece = await pullPiece();
     }
 
     return piece;
@@ -98,6 +108,7 @@ export const createStreamSource = (name: string, input: StreamInputType, total: 
       }
 
       closed = true;
+      signalClosed();
       await pieces.cancel();
     },
   };

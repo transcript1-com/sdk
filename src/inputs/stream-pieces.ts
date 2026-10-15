@@ -18,7 +18,7 @@ const openWebStream = (stream: ReadableStream<Uint8Array>): PiecesType => {
       return value;
     },
     async cancel() {
-      await reader.cancel().catch(() => null);
+      reader.cancel().catch(() => null);
     },
   };
 };
@@ -45,9 +45,10 @@ const openAsyncIterable = (iterable: AsyncIterable<Uint8Array>): PiecesType => {
 
       return result.value;
     },
+    // don't await, return() hangs behind a stalled next()
     async cancel() {
-      await iterator.return?.().catch(() => null);
       destroyIterable(iterable);
+      Promise.resolve(iterator.return?.()).catch(() => null);
     },
   };
 };
