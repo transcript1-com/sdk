@@ -163,6 +163,12 @@ try {
 Local codes: `missing_api_key`, `invalid_input`, `aborted`, `network_error`, `upload_token_refused`. A non-JSON error
 body gives `http_<status>`.
 
+A job that failed without an error object rejects with `transcription_failed`. If the API ever returns a completed job
+without its transcript, `transcribe` rejects with `internal_error`.
+
+`transcribe` resolves with a `CompletedTranscription`: a `Transcription` whose `status` is `completed` and whose
+`transcript` is always present, so `done.transcript.text` type-checks.
+
 ## Waiting and retries
 
 While a job exists, dropped connections and 429, 500, 502, 503 and 504 answers are retried without limit, backing off

@@ -99,6 +99,11 @@ export type Transcription = {
   reused?: boolean;
 };
 
+export type CompletedTranscription = Transcription & {
+  status: 'completed';
+  transcript: Transcript;
+};
+
 export type TranscriptionSummary = Omit<Transcription, 'transcript'>;
 
 export type Account = {

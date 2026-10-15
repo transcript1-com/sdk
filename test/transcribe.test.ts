@@ -67,6 +67,37 @@ test('fetches the transcript of a reused job that came back without one', async 
   assert.equal(findPolls(fake).length, 2);
 });
 
+const isJobRead = (input: string | URL | Request, init?: RequestInit): boolean => {
+  if ((init?.method ?? 'GET') !== 'GET') {
+    return false;
+  }
+
+  return /\/v1\/transcriptions\/[^/]+$/.test(new URL(String(input)).pathname);
+};
+
+const dropTranscript = (async (input: string | URL | Request, init?: RequestInit) => {
+  const response = await fetch(input, init);
+  if (!isJobRead(input, init)) {
+    return response;
+  }
+
+  const body = await response.json() as Record<string, unknown>;
+  Reflect.deleteProperty(body, 'transcript');
+
+  return Response.json(body, { status: response.status });
+}) as typeof fetch;
+
+test('rejects with internal_error when the refetched job still has no transcript', async t => {
+  const fake = await startApi(t);
+  const { config } = createApiConfig(fake, { fetch: dropTranscript });
+  const error = await expectRejection(transcribe(config, LINK));
+
+  assert.equal(error.code, 'internal_error');
+  assert.match(error.message, /without a transcript/);
+  assert.equal(error.transcriptionId, 'tr_1');
+  assert.equal(error.transcription?.status, 'completed');
+});
+
 test('rejects with the job error code and the failed transcription', async t => {
   const fake = await startApi(t, { failCode: 'no_speech' });
   const { config } = createApiConfig(fake);

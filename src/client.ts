@@ -9,6 +9,7 @@ import { list } from './transcriptions/list.js';
 import type { GetOptions, ListParams } from './transcriptions/types.js';
 import type {
   Account,
+  CompletedTranscription,
   CreateOptions,
   DownloadOptions,
   Input,
@@ -39,7 +40,7 @@ export class Transcript1 {
     this.transcriptions = createTranscriptions(this.#config);
   }
 
-  async transcribe(input: Input, options?: CreateOptions): Promise<Transcription> {
+  async transcribe(input: Input, options?: CreateOptions): Promise<CompletedTranscription> {
     return transcribe(this.#config, input, options);
   }
 

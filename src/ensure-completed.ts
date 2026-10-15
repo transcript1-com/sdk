@@ -1,8 +1,6 @@
-import { CANCELED_CODE } from './codes.js';
+import { CANCELED_CODE, ERROR_CODES } from './codes.js';
 import { Transcript1Error } from './errors.js';
 import type { Transcription } from './types.js';
-
-const FAILED_CODE = 'transcription_failed';
 
 export const ensureCompleted = (job: Transcription): Transcription => {
   if (job.status === 'completed') {
@@ -15,7 +13,7 @@ export const ensureCompleted = (job: Transcription): Transcription => {
   }
 
   throw new Transcript1Error(
-    job.error?.code ?? FAILED_CODE,
+    job.error?.code ?? ERROR_CODES.transcription_failed,
     job.error?.message ?? 'The transcription failed',
     extra,
   );

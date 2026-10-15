@@ -21,6 +21,7 @@ export { VERSION } from './version.js';
 export type {
   Account,
   Chunk,
+  CompletedTranscription,
   CreateOptions,
   DownloadOptions,
   Format,

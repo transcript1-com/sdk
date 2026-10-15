@@ -5,6 +5,7 @@ import {
   Transcript1Error,
   type Account,
   type ClientOptions,
+  type CompletedTranscription,
   type DownloadOptions,
   type Format,
   type GetOptions,
@@ -59,8 +60,10 @@ export const examples = async (buffer: Buffer, blob: Blob): Promise<void> => {
     signal: AbortSignal.timeout(600_000),
   };
 
-  const done: Transcription = await t1.transcribe('https://youtu.be/dQw4w9WgXcQ', transcribeOptions);
-  const text: string | undefined = done.transcript?.text;
+  const done: CompletedTranscription = await t1.transcribe('https://youtu.be/dQw4w9WgXcQ', transcribeOptions);
+  const { text } = done.transcript;
+  const asTranscription: Transcription = done;
+  console.log(asTranscription.status);
   await t1.transcribe('./interview.m4a', { speakers: true });
   await t1.transcribe(buffer, { filename: 'call.mp3' });
   await t1.transcribe(new Uint8Array(10), { filename: 'call.wav' });
