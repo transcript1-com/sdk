@@ -11,11 +11,15 @@ Full documentation: https://transcript1.com/docs/sdk
 npm i @transcript1/sdk
 ```
 
-Runs on Node 20.19+, Bun and Deno. It is for server code only: never ship an API key to a browser.
+Supports Node 20.19+. Bun and Deno are supported through their `node:` compatibility and are checked by hand as part
+of the launch checklist. Use the SDK server-side only; never ship an API key to a browser.
+
+The examples use ES modules. Save them as `.mjs` files, or set `"type": "module"` in `package.json` for `.js` files.
+`require()` also works on Node 20.19+.
 
 ## API key
 
-Use your transcript1 API key. The client reads `TRANSCRIPT1_API_KEY` from the environment, or you pass it:
+The client reads your API key from `TRANSCRIPT1_API_KEY`. You can also pass it to the constructor:
 
 ```ts
 import { Transcript1 } from '@transcript1/sdk';
@@ -28,8 +32,8 @@ Without a key the constructor throws a `Transcript1Error` with the code `missing
 
 ## Transcribe
 
-`transcribe` creates the job and waits until it is done. It resolves with a `completed` transcription that includes
-`transcript`, and rejects if the job failed or was canceled.
+`transcribe` creates a job and waits for its transcript. It returns a `completed` transcription with a `transcript`
+field. Failed or canceled jobs reject.
 
 ```ts
 const done = await t1.transcribe('https://youtu.be/dQw4w9WgXcQ'); // YouTube link
@@ -41,8 +45,8 @@ await t1.transcribe(blob, { filename: 'call.mp3' }); // Blob (a File brings its 
 await t1.transcribe(stream, { filename: 'call.mp3', size: 4_200_000 }); // stream or async iterable
 ```
 
-A string that starts with `http://` or `https://` is a link, any other string is a file path. Only YouTube links and
-files are supported for now. Files: mp3, wav, m4a, flac, ogg, opus, mp4, mov, webm, mkv, up to 2,000,000,000 bytes.
+Strings starting with `http://` or `https://` are links; other strings are file paths. Only YouTube links and files
+are supported. Files can be up to 2,000,000,000 bytes, with extensions mp3, wav, m4a, flac, ogg, opus, mp4, mov, webm or mkv.
 
 ## Download
 
@@ -56,7 +60,7 @@ const vtt = await t1.download(done.id, { format: 'vtt' });
 const json = await t1.download(done.id, { format: 'json' }); // the API's JSON text
 ```
 
-`timestamps` with a format other than `text` throws `invalid_input`.
+`timestamps: true` with a format other than `text` rejects with `invalid_input`.
 
 ## Background jobs
 
@@ -66,8 +70,8 @@ const now = await t1.transcriptions.get(job.id); // current state, at once
 const finished = await t1.transcriptions.get(job.id, { wait: true }); // until it ends
 ```
 
-`get(id, { wait: true })` is a read: it resolves with the finished object whatever its status (`completed`, `failed` or
-`canceled`). Pass `includeWords: true` to include word timings.
+`get(id, { wait: true })` returns the finished object whether its status is `completed`, `failed` or `canceled`.
+Check the status before reading its transcript. Pass `includeWords: true` to include word timings.
 
 ## List, delete, account
 
@@ -80,12 +84,13 @@ await t1.transcriptions.delete(job.id); // cancels a running job, deletes a fini
 const account = await t1.account();
 ```
 
-`list` pages automatically. Params: `status`, `platform` (`youtube` or `upload`), `limit` (page size, 1 to 100, default 20).
+`list` fetches pages as you iterate. Params: `status`, `platform` (`youtube` or `upload`), `limit` (page size, 1 to 100,
+API default 20) and `signal`.
 
 ## Options
 
-Client: `apiKey`, `baseUrl` (default `https://api.transcript1.com`, or `TRANSCRIPT1_API_URL`), `fetch`, `maxRetries`
-(default 2).
+The constructor accepts `apiKey`, `baseUrl`, `fetch` and `maxRetries` (default 2). `baseUrl` defaults to
+`TRANSCRIPT1_API_URL` when set, otherwise `https://api.transcript1.com`.
 
 `transcribe` and `transcriptions.create`:
 
@@ -102,6 +107,8 @@ Client: `apiKey`, `baseUrl` (default `https://api.transcript1.com`, or `TRANSCRI
 | `signal` | an `AbortSignal` |
 
 `download`: `format` (`text`, `srt`, `vtt`, `json`), `timestamps`, `signal`.
+
+`transcriptions.get`: `wait`, `includeWords`, `onProgress`, `signal`. Progress events are reported while waiting.
 
 Returned objects keep the API's field names (`snake_case`).
 
@@ -125,19 +132,19 @@ await t1.transcribe('./interview.m4a', {
 
 ## Abort
 
-Pass an `AbortSignal` to bound or cancel a call:
+Pass an `AbortSignal` to set a time limit or cancel a call:
 
 ```ts
 await t1.transcribe(url, { signal: AbortSignal.timeout(10 * 60_000) });
 ```
 
-Aborting before any request rejects with `aborted` and no id. Aborting an upload deletes the job if it is still
-awaiting its upload, then rejects with `aborted` and the id. Aborting while waiting leaves the job running; the error
+Aborting before any request rejects with `aborted` and no id. During an upload, the SDK tries to delete the job if it is
+still `awaiting_upload`, then rejects with `aborted` and the id. Aborting while waiting leaves the job running; the error
 carries `transcriptionId`, so you can resume with `get(id, { wait: true })`.
 
 ## Errors
 
-Every failure is a `Transcript1Error`:
+Catch `Transcript1Error` to read API, job and SDK error codes:
 
 ```ts
 import { Transcript1Error } from '@transcript1/sdk';
@@ -171,8 +178,9 @@ without its transcript, `transcribe` rejects with `internal_error`.
 
 ## Waiting and retries
 
-While a job exists, dropped connections and 429, 500, 502, 503 and 504 answers are retried without limit, backing off
-2, 4, 8, 16 and then 30 seconds; bound the total time with `signal`. Other requests retry up to `maxRetries` times. When
+While waiting for a job, the SDK retries dropped connections and HTTP 429, 500, 502, 503 and 504 responses without a
+retry limit. Reconnection waits increase from 2 to 4, 8, 16 and then 30 seconds; use `signal` to bound the total time.
+Other requests retry up to `maxRetries` times. When
 your plan's active-job limit is reached, `transcribe` and `transcriptions.create` wait for a slot and retry.
 
 ## Plans
