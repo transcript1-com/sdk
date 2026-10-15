@@ -11,8 +11,8 @@ Full documentation: https://transcript1.com/docs/sdk
 npm i @transcript1/sdk
 ```
 
-Supports Node 20.19+. Bun and Deno are supported through their `node:` compatibility and are checked by hand as part
-of the launch checklist. Use the SDK server-side only; never ship an API key to a browser.
+Node 20.19+. Bun and Deno should work through their `node:` compatibility; the automated tests run on Node only. Use
+the SDK server-side only; never ship an API key to a browser.
 
 The examples use ES modules. Save them as `.mjs` files, or set `"type": "module"` in `package.json` for `.js` files.
 `require()` also works on Node 20.19+.
@@ -46,7 +46,7 @@ await t1.transcribe(stream, { filename: 'call.mp3', size: 4_200_000 }); // strea
 ```
 
 Strings starting with `http://` or `https://` are links; other strings are file paths. Only YouTube links and files
-are supported. Files can be up to 2,000,000,000 bytes, with extensions mp3, wav, m4a, flac, ogg, opus, mp4, mov, webm or mkv.
+are supported for now. Files can be up to 2,000,000,000 bytes, with extensions mp3, wav, m4a, flac, ogg, opus, mp4, mov, webm or mkv.
 
 ## Download
 
@@ -185,7 +185,7 @@ your plan's active-job limit is reached, `transcribe` and `transcriptions.create
 
 ## Plans
 
-Free: 60 minutes once. Paid: $9/month or $90/year. See https://transcript1.com.
+See plans and prices at https://transcript1.com/#pricing.
 
 ## Support
 
