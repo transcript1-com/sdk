@@ -5,7 +5,7 @@ import type { ChunkSourceType, FileInputType } from '../inputs/types.js';
 import type { Transcription } from '../types.js';
 import { cancelUpload } from './cancel.js';
 import { complete } from './complete.js';
-import { createUpload } from './create-upload.js';
+import { openUpload } from './create-upload.js';
 import { sendChunks } from './send-chunks.js';
 import type { UploadOptionsType, UploadType } from './types.js';
 import { buildAbortedUploadError, withJobId } from './with-job-id.js';
@@ -37,7 +37,7 @@ const startUpload = async (config: ConfigType, options: UploadOptionsType): Prom
     throw buildAbortedUploadError();
   }
 
-  return createUpload(config, options, options.signal);
+  return openUpload(config, options, options.signal);
 };
 
 const finishUpload = async (config: ConfigType, file: FileInputType, options: UploadOptionsType, created: Transcription): Promise<Transcription> => {

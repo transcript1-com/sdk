@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
+import { request } from '../../src/http/request.js';
 import { create } from '../../src/transcriptions/create.js';
 import { expectRejection } from '../http/helpers.js';
 import {
@@ -123,6 +124,35 @@ test('waits for a job slot on 429 and retries with the same key', async t => {
     { type: 'waiting_slot', retryAfter: 1 },
     { type: 'waiting_slot', retryAfter: 1 },
   ]);
+});
+
+test('waits for a job slot when too many uploads are open and then uploads the file', async t => {
+  const fake = await startApi(t, { openUploadLimit: 1 });
+  const sleeps: number[] = [];
+  const { config } = createApiConfig(fake, {
+    async sleep(ms) {
+      sleeps.push(ms);
+      fake.knobs.openUploadLimit = 0;
+    },
+  });
+  const progress = createRecorder();
+  await request(config, {
+    method: 'POST',
+    path: '/v1/transcriptions',
+    body: { upload: { filename: 'old.mp3', size: 8, mime_type: 'audio/mpeg' } },
+    headers: { 'Idempotency-Key': 'stale' },
+  });
+  const created = await create(config, new Uint8Array(20), {
+    filename: 'talk.mp3',
+    idempotencyKey: 'up-2',
+    onProgress: progress.onProgress,
+  });
+  const keys = findCreates(fake).slice(1).map(call => call.headers['idempotency-key']);
+
+  assert.equal(created.status, 'queued');
+  assert.deepEqual(sleeps, [1000]);
+  assert.deepEqual(filterByType(progress.events, 'waiting_slot'), [{ type: 'waiting_slot', retryAfter: 1 }]);
+  assert.deepEqual(keys, ['up-2', 'up-2']);
 });
 
 test('ends a job-slot wait with aborted when the signal fires', async t => {

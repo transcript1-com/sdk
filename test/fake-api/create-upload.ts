@@ -6,6 +6,7 @@ import {
   issueToken,
   planChunks,
   refuseMinutes,
+  refuseOpenUpload,
 } from './jobs.js';
 
 const MAX_UPLOAD_BYTES = 2_000_000_000;
@@ -82,6 +83,10 @@ export const createUpload = (context: ContextType, key: string | undefined, body
 
   const params = JSON.stringify(['upload', filename, size, upload.mime_type, body.source, body.language, body.diarize]);
   if (replay(state, res, key, params)) {
+    return;
+  }
+
+  if (refuseOpenUpload(state, res)) {
     return;
   }
 

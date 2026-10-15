@@ -6,6 +6,7 @@ export type KnobsType = {
   chunkSize: number;
   polls: number;
   activeLimit: number;
+  openUploadLimit: number;
   minutesLeft: number;
   minutesPerJob: number;
   chunkStatus: Record<number, number[]>;
@@ -76,6 +77,7 @@ export const buildDefaultKnobs = (): KnobsType => ({
   chunkSize: 8,
   polls: 1,
   activeLimit: 0,
+  openUploadLimit: 0,
   minutesLeft: -1,
   minutesPerJob: 1,
   chunkStatus: {},

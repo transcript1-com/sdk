@@ -153,6 +153,24 @@ export const refuseStart = (state: StateType, res: ServerResponse): boolean => {
   return refuseMinutes(state, res);
 };
 
+const countOpenUploads = (state: StateType): number => state.order.filter(job => job.status === 'awaiting_upload').length;
+
+export const refuseOpenUpload = (state: StateType, res: ServerResponse): boolean => {
+  const { openUploadLimit } = state.knobs;
+  if (openUploadLimit <= 0) {
+    return false;
+  }
+
+  if (countOpenUploads(state) < openUploadLimit) {
+    return false;
+  }
+
+  const message = `Too many open uploads (limit ${openUploadLimit})`;
+  sendError(res, 429, ERROR_CODES.too_many_active_jobs, message, { headers: { 'Retry-After': '1' } });
+
+  return true;
+};
+
 export const advanceJob = (state: StateType, job: JobType) => {
   if (isTerminal(job.status)) {
     return;

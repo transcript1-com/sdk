@@ -2,8 +2,9 @@ import type { ConfigType } from '../config.js';
 import { buildAbortedError } from '../errors.js';
 import { request } from '../http/request.js';
 import type { LinkInputType } from '../inputs/types.js';
+import { isSlotBusy } from '../slot-busy.js';
 import type { CreateOptions, Transcription } from '../types.js';
-import { createSlotWaiter, isSlotBusy, type WaitSlotType } from './wait-slot.js';
+import { createSlotWaiter, type WaitSlotType } from './wait-slot.js';
 
 type LinkBodyType = {
   platform: 'youtube';
