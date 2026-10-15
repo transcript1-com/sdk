@@ -122,6 +122,8 @@ export type ProgressEvent =
   | { type: 'waiting_slot'; retryAfter: number }
   | { type: 'reconnecting' };
 
+export type Input = string | Uint8Array | Blob | ReadableStream<Uint8Array> | AsyncIterable<Uint8Array>;
+
 export type CreateOptions = {
   speakers?: boolean;
   language?: string;

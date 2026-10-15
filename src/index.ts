@@ -20,6 +20,7 @@ export type {
   Chunk,
   CreateOptions,
   Format,
+  Input,
   JobError,
   LinkSource,
   Media,
