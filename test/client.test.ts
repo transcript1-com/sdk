@@ -93,6 +93,18 @@ test('keeps working when transcriptions methods are taken apart', async t => {
   assert.equal(read.id, job.id);
 });
 
+test('keeps working when transcribe, download and account are taken apart', async t => {
+  const fake = await startApi(t);
+  const { transcribe, download, account } = createClient(fake.url);
+  const done = await transcribe(LINK);
+  const text = await download(done.id);
+  const current = await account();
+
+  assert.equal(done.status, 'completed');
+  assert.ok(text);
+  assert.equal(current.object, 'account');
+});
+
 test('runs many transcriptions at once on one client within its job slots', async t => {
   const fake = await startApi(t, { activeLimit: 2 });
   const t1 = createClient(fake.url);

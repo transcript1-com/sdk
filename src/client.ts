@@ -40,15 +40,10 @@ export class Transcript1 {
     this.transcriptions = createTranscriptions(this.#config);
   }
 
-  async transcribe(input: Input, options?: CreateOptions): Promise<CompletedTranscription> {
-    return transcribe(this.#config, input, options);
-  }
+  // arrow properties so destructured methods still work
+  readonly transcribe = async (input: Input, options?: CreateOptions): Promise<CompletedTranscription> => transcribe(this.#config, input, options);
 
-  async download(id: string, options?: DownloadOptions): Promise<string> {
-    return download(this.#config, id, options);
-  }
+  readonly download = async (id: string, options?: DownloadOptions): Promise<string> => download(this.#config, id, options);
 
-  async account(options?: { signal?: AbortSignal }): Promise<Account> {
-    return getAccount(this.#config, options?.signal);
-  }
+  readonly account = async (options?: { signal?: AbortSignal }): Promise<Account> => getAccount(this.#config, options?.signal);
 }
