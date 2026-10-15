@@ -6,11 +6,15 @@ import {
   readFile,
   readdir,
   rm,
-  stat,
   writeFile,
 } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
-import { join, resolve } from 'node:path';
+import {
+  join,
+  relative,
+  resolve,
+  sep,
+} from 'node:path';
 import { after, before, test } from 'node:test';
 import { promisify } from 'node:util';
 
@@ -27,21 +31,15 @@ let work = '';
 let project = '';
 let tarballFiles: string[] = [];
 
-const getNewestMtime = async (directory: string): Promise<number> => {
-  const entries = await readdir(directory, { withFileTypes: true, recursive: true });
-  const files = entries.filter(entry => entry.isFile());
-  const infos = await Promise.all(files.map(async entry => stat(join(entry.parentPath, entry.name))));
+const findExpectedDist = async (): Promise<string[]> => {
+  const entries = await readdir(join(root, 'src'), { withFileTypes: true, recursive: true });
+  const sources = entries
+    .filter(entry => entry.isFile())
+    .filter(entry => entry.name.endsWith('.ts'))
+    .map(entry => relative(root, join(entry.parentPath, entry.name)).split(sep).join('/'))
+    .map(path => path.replace(/^src\//, 'dist/').replace(/\.ts$/, ''));
 
-  return Math.max(0, ...infos.map(info => info.mtimeMs));
-};
-
-const buildWhenStale = async () => {
-  const built = await stat(join(root, 'dist/index.js')).then(info => info.mtimeMs, () => 0);
-  if (built > await getNewestMtime(join(root, 'src'))) {
-    return;
-  }
-
-  await run(tsc, ['-p', 'tsconfig.build.json'], { cwd: root });
+  return sources.flatMap(path => [`${path}.js`, `${path}.d.ts`]).sort();
 };
 
 const runConsumer = async (file: string): Promise<Record<string, unknown>> => {
@@ -110,7 +108,7 @@ before(async () => {
   work = await mkdtemp(join(tmpdir(), 'sdk-package-'));
   project = join(work, 'project');
   await mkdir(project);
-  await buildWhenStale();
+  await run('npm', ['run', 'build'], { cwd: root });
   const { stdout } = await run('npm', ['pack', '--json', '--ignore-scripts', '--pack-destination', work], { cwd: root });
   const [packed] = JSON.parse(stdout) as PackedType[];
   assert.ok(packed);
@@ -131,12 +129,14 @@ after(async () => {
 
 test('packs only package.json, README.md, LICENSE and compiled dist files', () => {
   const top = tarballFiles.filter(path => !path.startsWith('dist/'));
-  const dist = tarballFiles.filter(path => path.startsWith('dist/'));
 
   assert.deepEqual(top, ['LICENSE', 'README.md', 'package.json']);
-  assert.ok(dist.includes('dist/index.js'));
-  assert.ok(dist.includes('dist/index.d.ts'));
-  assert.deepEqual(dist.filter(path => !/\.(js|d\.ts)$/.test(path)), []);
+});
+
+test('packs exactly one .js and one .d.ts for every source file', async () => {
+  const dist = tarballFiles.filter(path => path.startsWith('dist/'));
+
+  assert.deepEqual(dist, await findExpectedDist());
 });
 
 test('an ES module consumer constructs a client', async () => {
