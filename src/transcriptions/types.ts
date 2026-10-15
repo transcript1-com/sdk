@@ -13,7 +13,7 @@ export type GetOptions = Omit<WaitOptionsType, 'transcription'> & {
 
 export type ListParams = {
   status?: Status;
-  platform?: string;
+  platform?: 'youtube' | 'upload';
   limit?: number;
   signal?: AbortSignal;
 };

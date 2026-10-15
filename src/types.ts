@@ -33,7 +33,7 @@ export type Transcript = {
 };
 
 export type LinkSource = {
-  platform: string;
+  platform: 'youtube';
   url: string | null;
   media_id: string | null;
 };

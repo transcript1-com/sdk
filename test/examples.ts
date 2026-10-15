@@ -88,6 +88,14 @@ export const examples = async (buffer: Buffer, blob: Blob): Promise<void> => {
   };
   const finished = await t1.transcriptions.get(job.id, getOptions);
   await t1.transcriptions.get(job.id);
+  if (finished.source.platform === 'upload') {
+    const uploaded: string | null = finished.source.filename;
+    console.log(uploaded);
+  }
+
+  // @ts-expect-error only youtube and upload are listable platforms
+  const unknownPlatform: ListParams = { platform: 'vimeo' };
+  console.log(unknownPlatform);
 
   const params: ListParams = { status: 'completed', platform: 'youtube', limit: 50 };
   for await (const item of t1.transcriptions.list(params)) {
