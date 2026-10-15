@@ -87,11 +87,7 @@ const consumerTsconfig = {
 };
 
 const publicKeys = [
-  'CANCELED_CODE',
   'ERROR_CODES',
-  'JOB_FAILURE_CODES',
-  'LOCAL_CODES',
-  'REQUEST_ERROR_CODES',
   'Transcript1',
   'Transcript1Error',
 ];
