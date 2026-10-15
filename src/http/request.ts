@@ -51,12 +51,58 @@ const isBinary = (body: unknown): body is Uint8Array | Blob => {
   return body instanceof Blob;
 };
 
+type EncodedBodyType = {
+  body?: BodyInit;
+  json: boolean;
+};
+
 const isJsonBody = (body: unknown): boolean => {
-  if (body === undefined) {
+  if (Array.isArray(body)) {
+    return true;
+  }
+
+  if (body === null) {
     return false;
   }
 
-  return !isBinary(body);
+  if (typeof body !== 'object') {
+    return false;
+  }
+
+  const prototype = Object.getPrototypeOf(body) as unknown;
+  if (prototype === null) {
+    return true;
+  }
+
+  return prototype === Object.prototype;
+};
+
+const encodeBody = (body: unknown): EncodedBodyType => {
+  if (body === undefined) {
+    return { json: false };
+  }
+
+  if (isBinary(body)) {
+    return { body: body as BodyInit, json: false };
+  }
+
+  if (!isJsonBody(body)) {
+    const message = 'A request body must be a plain object, an array, a Uint8Array or a Blob';
+    throw new Transcript1Error(ERROR_CODES.invalid_input, message);
+  }
+
+  return { body: JSON.stringify(body), json: true };
+};
+
+const isSameOrigin = (url: string, baseUrl: string): boolean => new URL(url).origin === new URL(baseUrl).origin;
+
+// the key goes only to the api origin
+const canSendKey = (config: ConfigType, url: string, options: RequestOptionsType): boolean => {
+  if (options.auth === false) {
+    return false;
+  }
+
+  return isSameOrigin(url, config.baseUrl);
 };
 
 const buildUrl = (config: ConfigType, options: RequestOptionsType): string => {
@@ -71,19 +117,14 @@ const buildUrl = (config: ConfigType, options: RequestOptionsType): string => {
   return url.toString();
 };
 
-const buildInit = (config: ConfigType, options: RequestOptionsType): RequestInit => {
+const buildInit = (config: ConfigType, url: string, options: RequestOptionsType): RequestInit => {
+  const { body, json } = encodeBody(options.body);
   const headers = new Headers({ 'User-Agent': `transcript1-sdk/${VERSION}` });
-  if (options.auth !== false) {
+  if (canSendKey(config, url, options)) {
     headers.set('Authorization', `Bearer ${config.apiKey}`);
   }
 
-  let body: BodyInit | undefined;
-  if (isBinary(options.body)) {
-    body = options.body as BodyInit;
-  }
-
-  if (isJsonBody(options.body)) {
-    body = JSON.stringify(options.body);
+  if (json) {
     headers.set('Content-Type', 'application/json');
   }
 
@@ -217,9 +258,10 @@ const runAttempt = async (config: ConfigType, call: CallType, n: number): Promis
 };
 
 export const request = async (config: ConfigType, options: RequestOptionsType): Promise<HttpResponseType> => {
+  const url = buildUrl(config, options);
   const call: CallType = {
-    url: buildUrl(config, options),
-    init: buildInit(config, options),
+    url,
+    init: buildInit(config, url, options),
     signal: options.signal,
     retry429: options.retry429 ?? true,
     raw: options.raw ?? false,
