@@ -1,0 +1,97 @@
+{
+  "name": "@transcript1/sdk",
+  "version": "1.0.0",
+  "description": "TypeScript SDK for the transcript1 transcription API",
+  "license": "MIT",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "sideEffects": false,
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=20.19"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "homepage": "https://transcript1.com/docs/sdk",
+  "bugs": {
+    "email": "support@one1.dev"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "test": "tsc --noEmit -p tsconfig.json && tsx --test 'test/**/*.test.ts' && tsc -p tsconfig.build.json",
+    "lint": "xo",
+    "lint:fix": "xo --fix",
+    "prepublishOnly": "npm test"
+  },
+  "xo": {
+    "space": 2,
+    "overrides": [
+      {
+        "files": "test/**/*.ts",
+        "rules": {
+          "@typescript-eslint/no-floating-promises": "off"
+        }
+      },
+      {
+        "files": "**/*.ts",
+        "rules": {
+          "@typescript-eslint/naming-convention": [
+            "error",
+            {
+              "selector": "enumMember",
+              "format": [
+                "UPPER_CASE",
+                "PascalCase",
+                "snake_case"
+              ]
+            }
+          ]
+        }
+      }
+    ],
+    "rules": {
+      "@typescript-eslint/prefer-for-of": "off",
+      "logical-assignment-operators": [
+        "error",
+        "never"
+      ],
+      "unicorn/prefer-top-level-await": "off",
+      "unicorn/prefer-ternary": "off",
+      "unicorn/no-array-method-this-argument": "off",
+      "unicorn/prevent-abbreviations": "off",
+      "new-cap": "off",
+      "unicorn/no-abusive-eslint-disable": "off",
+      "eslint-comments/no-unused-disable": "off",
+      "capitalized-comments": "off",
+      "import/no-unassigned-import": "off",
+      "import/no-anonymous-default-export": "off",
+      "unicorn/no-thenable": "off",
+      "@typescript-eslint/class-literal-property-style": "off",
+      "@typescript-eslint/no-unused-expressions": "off",
+      "@typescript-eslint/object-curly-spacing": "off",
+      "@typescript-eslint/ban-types": "off",
+      "object-curly-spacing": [
+        "error",
+        "always"
+      ]
+    }
+  },
+  "devDependencies": {
+    "@types/node": "^22.20.5",
+    "tsx": "^4.23.15",
+    "typescript": "^5.9.3",
+    "xo": "^0.58.0"
+  }
+}
