@@ -42,19 +42,55 @@ const sleep = async (ms: number, signal?: AbortSignal): Promise<void> => new Pro
   signal?.addEventListener('abort', onAbort, { once: true });
 });
 
+const MAX_RETRIES_LIMIT = 10;
+
+const trimValue = (value: string | undefined): string | undefined => {
+  const trimmed = value?.trim();
+  if (!trimmed) {
+    return undefined;
+  }
+
+  return trimmed;
+};
+
+const buildMaxRetriesError = () => new Transcript1Error(
+  ERROR_CODES.invalid_input,
+  `maxRetries must be an integer from 0 to ${MAX_RETRIES_LIMIT}`,
+);
+
+const resolveMaxRetries = (value: number | undefined): number => {
+  if (value === undefined) {
+    return DEFAULT_MAX_RETRIES;
+  }
+
+  if (!Number.isInteger(value)) {
+    throw buildMaxRetriesError();
+  }
+
+  if (value < 0) {
+    throw buildMaxRetriesError();
+  }
+
+  if (value > MAX_RETRIES_LIMIT) {
+    throw buildMaxRetriesError();
+  }
+
+  return value;
+};
+
 export const resolveConfig = (options: ClientOptions = {}, internals: ConfigInternalsType = {}): ConfigType => {
-  const apiKey = options.apiKey ?? readEnv('TRANSCRIPT1_API_KEY');
+  const apiKey = trimValue(options.apiKey) ?? trimValue(readEnv('TRANSCRIPT1_API_KEY'));
   if (!apiKey) {
     throw new Transcript1Error(ERROR_CODES.missing_api_key, 'No API key: pass apiKey or set TRANSCRIPT1_API_KEY');
   }
 
-  const baseUrl = options.baseUrl ?? readEnv('TRANSCRIPT1_API_URL') ?? DEFAULT_BASE_URL;
+  const baseUrl = trimValue(options.baseUrl) ?? trimValue(readEnv('TRANSCRIPT1_API_URL')) ?? DEFAULT_BASE_URL;
 
   return {
     apiKey,
     baseUrl: baseUrl.replace(/\/+$/, ''),
     fetch: options.fetch ?? globalThis.fetch.bind(globalThis),
-    maxRetries: options.maxRetries ?? DEFAULT_MAX_RETRIES,
+    maxRetries: resolveMaxRetries(options.maxRetries),
     sleep: internals.sleep ?? sleep,
     random: internals.random ?? Math.random,
   };

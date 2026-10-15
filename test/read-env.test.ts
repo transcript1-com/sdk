@@ -42,6 +42,22 @@ test('falls back to Deno.env when there is no process', () => {
   }
 });
 
+test('treats a throwing process.env as unset', () => {
+  const saved = Object.getOwnPropertyDescriptor(globalThis, 'process');
+  const denied = {
+    get env(): never {
+      throw new Error('NotCapable: Requires env access');
+    },
+  };
+  Object.defineProperty(globalThis, 'process', { value: denied, configurable: true });
+
+  try {
+    assert.equal(readEnv('T1_READ_ENV_TEST'), undefined);
+  } finally {
+    Object.defineProperty(globalThis, 'process', saved!);
+  }
+});
+
 test('treats a refused Deno permission as unset', () => {
   const saved = Object.getOwnPropertyDescriptor(globalThis, 'process');
   holder.Deno = {

@@ -64,6 +64,65 @@ test('prefers options over the environment', () => {
   assert.equal(config.baseUrl, 'http://option.example');
 });
 
+test('uses the default url when reading the environment is denied', () => {
+  const saved = Object.getOwnPropertyDescriptor(globalThis, 'process');
+  const denied = {
+    get env(): never {
+      throw new Error('NotCapable: Requires env access');
+    },
+  };
+  Object.defineProperty(globalThis, 'process', { value: denied, configurable: true });
+
+  try {
+    assert.equal(resolveConfig({ apiKey: 't1_key' }).baseUrl, 'https://api.transcript1.com');
+  } finally {
+    Object.defineProperty(globalThis, 'process', saved!);
+  }
+});
+
+test('falls back to the environment key when the apiKey option is empty', () => {
+  process.env.TRANSCRIPT1_API_KEY = 't1_env';
+
+  assert.equal(resolveConfig({ apiKey: '' }).apiKey, 't1_env');
+  assert.equal(resolveConfig({ apiKey: '   ' }).apiKey, 't1_env');
+});
+
+test('uses the default url when the environment url is empty', () => {
+  process.env.TRANSCRIPT1_API_URL = '';
+
+  assert.equal(resolveConfig({ apiKey: 't1_key' }).baseUrl, 'https://api.transcript1.com');
+
+  process.env.TRANSCRIPT1_API_URL = '  ';
+
+  assert.equal(resolveConfig({ apiKey: 't1_key' }).baseUrl, 'https://api.transcript1.com');
+});
+
+test('uses the default url when the baseUrl option is empty', () => {
+  assert.equal(resolveConfig({ apiKey: 't1_key', baseUrl: '' }).baseUrl, 'https://api.transcript1.com');
+});
+
+test('rejects a key that is empty in both the option and the environment', () => {
+  process.env.TRANSCRIPT1_API_KEY = ' ';
+
+  assert.throws(() => resolveConfig({ apiKey: '' }), { code: 'missing_api_key' });
+});
+
+test('accepts maxRetries from 0 to 10', () => {
+  assert.equal(resolveConfig({ apiKey: 't1_key', maxRetries: 0 }).maxRetries, 0);
+  assert.equal(resolveConfig({ apiKey: 't1_key', maxRetries: 10 }).maxRetries, 10);
+});
+
+for (const value of [-1, 1.5, Number.NaN, 11, Number.POSITIVE_INFINITY]) {
+  test(`rejects maxRetries ${value} with invalid_input`, () => {
+    assert.throws(() => resolveConfig({ apiKey: 't1_key', maxRetries: value }), (error: unknown) => {
+      assert.ok(error instanceof Transcript1Error);
+      assert.equal(error.code, 'invalid_input');
+      assert.match(error.message, /maxRetries/);
+      return true;
+    });
+  });
+}
+
 test('defaults the base url to the production api', () => {
   assert.equal(resolveConfig({ apiKey: 't1_key' }).baseUrl, 'https://api.transcript1.com');
 });
