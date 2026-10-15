@@ -1,4 +1,7 @@
+export { Transcript1 } from './client.js';
+export type { Transcriptions } from './client.js';
 export { Transcript1Error } from './errors.js';
+export type { GetOptions, ListParams } from './transcriptions/types.js';
 export type { ErrorExtra } from './errors.js';
 export {
   CANCELED_CODE,
@@ -19,6 +22,7 @@ export type {
   Account,
   Chunk,
   CreateOptions,
+  DownloadOptions,
   Format,
   Input,
   JobError,
@@ -27,6 +31,7 @@ export type {
   ProgressEvent,
   Segment,
   Status,
+  TranscribeOptions,
   Transcript,
   Transcription,
   TranscriptionOptions,

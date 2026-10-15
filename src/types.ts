@@ -124,6 +124,14 @@ export type ProgressEvent =
 
 export type Input = string | Uint8Array | Blob | ReadableStream<Uint8Array> | AsyncIterable<Uint8Array>;
 
+export type TranscribeOptions = CreateOptions;
+
+export type DownloadOptions = {
+  format?: Format;
+  timestamps?: boolean;
+  signal?: AbortSignal;
+};
+
 export type CreateOptions = {
   speakers?: boolean;
   language?: string;
