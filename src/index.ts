@@ -17,7 +17,6 @@ export type {
   RequestErrorCode,
 } from './codes.js';
 export type { ClientOptions } from './config.js';
-export { VERSION } from './version.js';
 export type {
   Account,
   Chunk,
