@@ -4,7 +4,7 @@ import type { Transcript1Error } from '../../src/errors.js';
 import { request } from '../../src/http/request.js';
 import type { Transcription } from '../../src/types.js';
 import { uploadFile } from '../../src/uploads/upload-file.js';
-import { expectRejection } from '../http/helpers.js';
+import { createTestConfig, expectRejection } from '../http/helpers.js';
 import {
   buildBytes,
   buildFile,
@@ -67,6 +67,54 @@ test('waits for a job slot on complete and retries only the complete', async t =
   assert.deepEqual(waits.map(error => [error.code, error.status]), [['too_many_active_jobs', 429]]);
   assert.equal(countRequests(fake, 'POST', COMPLETE), 2);
   assert.deepEqual(getPuts(fake).sort((a, b) => a - b), [0, 1, 2, 3]);
+});
+
+test('recovers the running job when the answer to a processed complete is lost', async t => {
+  const fake = await startApi(t, { polls: 5 });
+  let lost = false;
+  const losing = (async (input: string | URL | Request, init?: RequestInit) => {
+    const response = await fetch(input, init);
+    if (lost) {
+      return response;
+    }
+
+    if (!String(input).endsWith('/upload/complete')) {
+      return response;
+    }
+
+    lost = true;
+    await response.text();
+    throw new TypeError('fetch failed');
+  }) as typeof fetch;
+  const { config } = createTestConfig({ fetch: losing, baseUrl: fake.url });
+  const file = buildFile(buildBytes(30));
+  const done = await uploadFile(config, file, buildOptions(file));
+  const paths = fake.requests.map(request => `${request.method} ${request.path}`);
+  const secondComplete = paths.lastIndexOf('POST /v1/transcriptions/tr_1/upload/complete');
+
+  assert.equal(done.status, 'transcribing');
+  assert.equal(done.id, 'tr_1');
+  assert.equal(countRequests(fake, 'POST', COMPLETE), 2);
+  assert.deepEqual(paths.slice(secondComplete + 1), ['GET /v1/transcriptions/tr_1']);
+});
+
+test('keeps invalid_state when the job behind a refused complete is not running', async t => {
+  const fake = await startApi(t);
+  const canceling = (async (input: string | URL | Request, init?: RequestInit) => {
+    if (String(input).endsWith('/upload/complete')) {
+      const headers = { Authorization: `Bearer ${fake.knobs.key}` };
+      await fetch(`${fake.url}/v1/transcriptions/tr_1`, { method: 'DELETE', headers });
+    }
+
+    return fetch(input, init);
+  }) as typeof fetch;
+  const { config } = createTestConfig({ fetch: canceling, baseUrl: fake.url });
+  const file = buildFile(buildBytes(8));
+  const error = await expectRejection(uploadFile(config, file, buildOptions(file)));
+
+  assert.equal(error.code, 'invalid_state');
+  assert.equal(error.status, 409);
+  assert.equal(error.transcriptionId, 'tr_1');
 });
 
 test('passes the signal to waitSlot and fails with its error', async t => {

@@ -6,6 +6,7 @@ import type { UploadType } from './types.js';
 import { buildAbortedUploadError } from './with-job-id.js';
 
 const readChunk = async (source: ChunkSourceType, chunk: Chunk, signal: AbortSignal): Promise<Uint8Array> => {
+  // read before any await, so a stream is read in order
   const read = source.read(chunk.offset, chunk.size);
   read.catch(() => null);
 

@@ -21,6 +21,30 @@ const isSlotBusy = (error: unknown): error is Transcript1Error => {
   return error.code === ERROR_CODES.rate_limited;
 };
 
+const isInvalidState = (error: unknown): boolean => {
+  if (!(error instanceof Transcript1Error)) {
+    return false;
+  }
+
+  return error.code === ERROR_CODES.invalid_state;
+};
+
+// the first answer may be lost after the job started
+const findStartedJob = async (upload: UploadType, error: unknown, signal?: AbortSignal): Promise<Transcription> => {
+  const path = `/v1/transcriptions/${encodeURIComponent(upload.id)}`;
+  const current = await request(upload.config, { method: 'GET', path, signal }).catch(() => null);
+  const job = current?.json as Transcription | undefined;
+  if (!job) {
+    throw error;
+  }
+
+  if (!['queued', 'fetching', 'transcribing', 'completed'].includes(job.status)) {
+    throw error;
+  }
+
+  return job;
+};
+
 // a job slot 429 retries only the complete, not the chunks
 const sendComplete = async (upload: UploadType, signal?: AbortSignal): Promise<Transcription> => {
   const path = `/v1/transcriptions/${encodeURIComponent(upload.id)}/upload/complete`;
@@ -34,6 +58,10 @@ const sendComplete = async (upload: UploadType, signal?: AbortSignal): Promise<T
 
     return done.json as Transcription;
   } catch (error: unknown) {
+    if (isInvalidState(error)) {
+      return findStartedJob(upload, error, signal);
+    }
+
     if (!isSlotBusy(error)) {
       throw error;
     }

@@ -22,22 +22,11 @@ const cancelQuietly = async (config: ConfigType, id: string | undefined) => {
   await cancelUpload(config, id).catch(() => null);
 };
 
-const isSourceError = (error: unknown): boolean => {
-  if (!(error instanceof Transcript1Error)) {
-    return true;
-  }
-
-  return error.code === ERROR_CODES.invalid_input;
-};
-
+// an open upload counts against the team cap
 const handleFailure = async (config: ConfigType, error: unknown, jobId: string | undefined, signal?: AbortSignal): Promise<unknown> => {
+  await cancelQuietly(config, jobId);
   if (signal?.aborted) {
-    await cancelQuietly(config, jobId);
     return buildAbortedUploadError(jobId);
-  }
-
-  if (isSourceError(error)) {
-    await cancelQuietly(config, jobId);
   }
 
   return withJobId(error, jobId);
