@@ -453,6 +453,17 @@ test('refuses bad create bodies with the envelope', async t => {
   assert.deepEqual([empty.status, empty.json.error.code], [422, 'invalid_request']);
 });
 
+test('refuses reuse_recent on an upload create like the api', async t => {
+  const fake = await startApi(t);
+  const reply = await callApi(fake, 'POST', '/v1/transcriptions?reuse_recent=true', {
+    headers: { 'Idempotency-Key': 'k1' },
+    body: uploadBody,
+  });
+
+  assert.deepEqual([reply.status, reply.json.error.code], [422, 'invalid_request']);
+  assert.equal(reply.json.error.message, 'reuse_recent is available only for platform URLs');
+});
+
 const createGate = (): { promise: Promise<void>; open: () => void } => {
   let open: () => void = () => undefined;
   const promise = new Promise<void>(resolve => {

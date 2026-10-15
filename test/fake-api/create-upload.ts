@@ -49,7 +49,12 @@ const isSupportedFile = (filename: string): boolean => {
 const isUploadSource = (value: string): value is 'auto' | 'stt' => ['auto', 'stt'].includes(value);
 
 export const createUpload = (context: ContextType, key: string | undefined, body: CreateBodyType) => {
-  const { state, res } = context;
+  const { state, res, query } = context;
+  if (query.get('reuse_recent') === 'true') {
+    sendError(res, 422, ERROR_CODES.invalid_request, 'reuse_recent is available only for platform URLs');
+    return;
+  }
+
   const upload = body.upload ?? {};
   const file = readUploadFile(upload);
   if (!file) {
