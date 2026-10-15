@@ -90,12 +90,28 @@ test('parses a json answer', async () => {
   assert.equal(result.headers.get('X-Request-Id'), 'r1');
 });
 
-test('returns text for a non-json answer', async () => {
+test('returns text for a non-json answer when raw is set', async () => {
   const stub = createScriptedFetch([buildReply(200, '1\n00:00 hi', { 'Content-Type': 'text/plain; charset=utf-8' })]);
   const { config } = createTestConfig({ fetch: stub.fetch });
-  const result = await request(config, { method: 'GET', path: '/v1/x' });
+  const result = await request(config, { method: 'GET', path: '/v1/x', raw: true });
   assert.equal(result.text, '1\n00:00 hi');
   assert.equal(result.json, undefined);
+});
+
+test('fails with the http status when a success answer is not json', async () => {
+  const stub = createScriptedFetch([buildReply(201, 'created', { 'Content-Type': 'text/plain' })]);
+  const { config } = createTestConfig({ fetch: stub.fetch });
+  const error = await expectRejection(request(config, { method: 'POST', path: '/v1/x' }));
+  assert.equal(error.code, 'http_201');
+  assert.equal(error.status, 201);
+  assert.equal(error.message, 'the server answered HTTP 201 without JSON');
+});
+
+test('fails with the http status when a success answer has an empty json body', async () => {
+  const stub = createScriptedFetch([buildReply(200, '', { 'Content-Type': 'application/json' })]);
+  const { config } = createTestConfig({ fetch: stub.fetch });
+  const error = await expectRejection(request(config, { method: 'GET', path: '/v1/x' }));
+  assert.equal(error.code, 'http_200');
 });
 
 test('returns text for a json answer when raw is set', async () => {

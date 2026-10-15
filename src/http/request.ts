@@ -173,6 +173,8 @@ const buildNetworkError = (failure: unknown): Transcript1Error => {
 
 const isJson = (headers: Headers): boolean => /json/i.test(headers.get('Content-Type') ?? '');
 
+const buildNotJsonError = (status: number): Transcript1Error => new Transcript1Error(`http_${status}`, `the server answered HTTP ${status} without JSON`, { status });
+
 const readReply = (reply: ReplyType, raw: boolean): HttpResponseType => {
   const { status, headers, text } = reply;
   if (status === 204) {
@@ -184,11 +186,11 @@ const readReply = (reply: ReplyType, raw: boolean): HttpResponseType => {
   }
 
   if (!text) {
-    return { status, headers, text };
+    throw buildNotJsonError(status);
   }
 
   if (!isJson(headers)) {
-    return { status, headers, text };
+    throw buildNotJsonError(status);
   }
 
   try {
