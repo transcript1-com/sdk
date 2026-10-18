@@ -436,6 +436,19 @@ test('cancels a running job and deletes a finished one', async t => {
   assert.equal(gone.status, 404);
 });
 
+test('creates link jobs without a platform and reports the detected one', async t => {
+  const fake = await startApi(t);
+  const youtube = await callApi(fake, 'POST', '/v1/transcriptions', { body: { url: link.url } });
+  const x = await callApi(fake, 'POST', '/v1/transcriptions', { body: { url: 'https://x.com/jack/status/20' } });
+  const mismatch = await createLink(fake, { platform: 'tiktok', url: 'https://x.com/jack/status/20' });
+
+  assert.equal(youtube.json.source.platform, 'youtube');
+  assert.equal(x.json.source.platform, 'x');
+  assert.equal(x.json.source.url, 'https://x.com/jack/status/20');
+  assert.equal(x.json.source.media_id, null);
+  assert.deepEqual([mismatch.status, mismatch.json.error.code], [422, 'invalid_url']);
+});
+
 test('refuses bad create bodies with the envelope', async t => {
   const fake = await startApi(t);
   const platform = await createLink(fake, { platform: 'vimeo' });
@@ -445,7 +458,7 @@ test('refuses bad create bodies with the envelope', async t => {
   const empty = await createUpload(fake, 'k3', { upload: { filename: 'a.mp3', size: 0 } });
 
   assert.deepEqual([platform.status, platform.json.error.code], [422, 'unsupported_platform']);
-  assert.deepEqual(platform.json.error.supported_platforms, ['youtube']);
+  assert.deepEqual(platform.json.error.supported_platforms, ['youtube', 'x', 'tiktok', 'instagram', 'facebook', 'bluesky']);
   assert.deepEqual([url.status, url.json.error.code], [422, 'invalid_url']);
   assert.deepEqual([extension.status, extension.json.error.code], [422, 'unsupported_media']);
   assert.deepEqual([big.status, big.json.error.code], [413, 'media_too_large']);

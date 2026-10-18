@@ -1,3 +1,4 @@
+import type { LinkPlatformType } from '../../src/inputs/types.js';
 import type { Chunk, Status } from '../../src/types.js';
 
 export type KnobsType = {
@@ -23,7 +24,7 @@ export type JobType = {
   id: string;
   seq: number;
   status: Status;
-  platform: 'youtube' | 'upload';
+  platform: LinkPlatformType | 'upload';
   url: string;
   videoId: string;
   title: string;

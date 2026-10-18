@@ -1,9 +1,12 @@
 import { ERROR_CODES } from '../../src/codes.js';
+import { detectLinkPlatform } from '../../src/inputs/detect-platform.js';
+import type { LinkPlatformType } from '../../src/inputs/types.js';
 import { replay, writeCreated, type CreateBodyType } from './created.js';
 import { sendError, type ContextType } from './http.js';
 import { addJob, refuseStart, startJob } from './jobs.js';
 import type { JobType, StateType } from './state.js';
 
+const PLATFORMS = ['youtube', 'x', 'tiktok', 'instagram', 'facebook', 'bluesky'];
 const DAY_MS = 24 * 60 * 60 * 1000;
 const VIDEO_ID = /(?:youtu\.be\/|[?&]v=|\/(?:shorts|embed|live)\/)([\w-]{11})(?![\w-])/;
 
@@ -52,17 +55,45 @@ const findReused = (state: StateType, query: URLSearchParams, params: string): J
 
 const isSource = (value: string): value is JobType['source'] => ['auto', 'captions', 'stt'].includes(value);
 
+const parseLink = (value: unknown): { platform: LinkPlatformType; videoId: string; url: string } | undefined => {
+  if (typeof value !== 'string') {
+    return undefined;
+  }
+
+  const platform = detectLinkPlatform(value);
+  if (!platform) {
+    return undefined;
+  }
+
+  if (platform !== 'youtube') {
+    return { platform, videoId: '', url: value.trim() };
+  }
+
+  const parsed = parseYouTube(value);
+  if (!parsed) {
+    return undefined;
+  }
+
+  return { platform, ...parsed };
+};
+
 export const createLink = (context: ContextType, key: string | undefined, body: CreateBodyType) => {
   const { state, res, query } = context;
-  if (body.platform !== 'youtube') {
-    const extra = { supported_platforms: ['youtube'] };
+  const isPlatformGiven = body.platform !== undefined;
+  if (isPlatformGiven && !PLATFORMS.includes(String(body.platform))) {
+    const extra = { supported_platforms: PLATFORMS };
     sendError(res, 422, ERROR_CODES.unsupported_platform, 'Unsupported platform', { extra });
     return;
   }
 
-  const parsed = parseYouTube(body.url);
+  const parsed = parseLink(body.url);
   if (!parsed) {
-    sendError(res, 422, ERROR_CODES.invalid_url, 'Not a YouTube video link');
+    sendError(res, 422, ERROR_CODES.invalid_url, 'Not a supported link');
+    return;
+  }
+
+  if (isPlatformGiven && body.platform !== parsed.platform) {
+    sendError(res, 422, ERROR_CODES.invalid_url, 'The link is from another platform');
     return;
   }
 
@@ -76,7 +107,7 @@ export const createLink = (context: ContextType, key: string | undefined, body: 
     return;
   }
 
-  const params = JSON.stringify(['link', parsed.videoId, body.source, body.language, body.diarize]);
+  const params = JSON.stringify(['link', parsed.platform, parsed.videoId || parsed.url, body.source, body.language, body.diarize]);
   if (replay(state, res, key, params)) {
     return;
   }
@@ -93,7 +124,7 @@ export const createLink = (context: ContextType, key: string | undefined, body: 
 
   const job = addJob(state, {
     status: 'queued',
-    platform: 'youtube',
+    platform: parsed.platform,
     url: parsed.url,
     videoId: parsed.videoId,
     title: state.knobs.titles[parsed.videoId] ?? `Video ${parsed.videoId}`,

@@ -25,7 +25,29 @@ test('creates a link without waiting, reusing a recent job, with the canonical u
   assert.equal(request?.query.get('wait'), '0');
   assert.equal(request?.query.get('reuse_recent'), 'true');
   assert.equal(request?.headers['idempotency-key'], 'key-1');
-  assert.deepEqual(parseBody(request), { platform: 'youtube', url: CANONICAL });
+  assert.deepEqual(parseBody(request), { url: CANONICAL });
+});
+
+test('sends no platform for a YouTube link', async t => {
+  const fake = await startApi(t);
+  const { config } = createApiConfig(fake);
+  await create(config, LINK);
+  const [request] = findCreates(fake);
+
+  assert.ok(!('platform' in (parseBody(request) as Record<string, unknown>)));
+});
+
+test('sends an X link as the raw url with no platform', async t => {
+  const fake = await startApi(t);
+  const { config } = createApiConfig(fake);
+  const created = await create(config, 'https://x.com/jack/status/20');
+  const [request] = findCreates(fake);
+  const body = parseBody(request) as Record<string, unknown>;
+
+  assert.ok(!('platform' in body));
+  assert.deepEqual(body, { url: 'https://x.com/jack/status/20' });
+  assert.equal(created.status, 'queued');
+  assert.equal(created.source.platform, 'x');
 });
 
 test('sends source, language and diarize only when they are given', async t => {
@@ -36,13 +58,12 @@ test('sends source, language and diarize only when they are given', async t => {
   const [first, second] = findCreates(fake);
 
   assert.deepEqual(parseBody(first), {
-    platform: 'youtube',
     url: CANONICAL,
     source: 'stt',
     language: 'pl',
     diarize: true,
   });
-  assert.deepEqual(parseBody(second), { platform: 'youtube', url: CANONICAL });
+  assert.deepEqual(parseBody(second), { url: CANONICAL });
 });
 
 test('drops reuse_recent when fresh is set', async t => {

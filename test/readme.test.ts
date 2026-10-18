@@ -11,8 +11,11 @@ test('states the runtimes without promising more than the tests cover', () => {
   assert.ok(!flat.includes('launch checklist'));
 });
 
-test('keeps YouTube-only support as a current limit', () => {
-  assert.ok(flat.includes('Only YouTube links and files are supported for now.'));
+test('names the six platforms and the first-video limit', () => {
+  assert.ok(flat.includes('Links from YouTube, X, TikTok, Instagram, Facebook and Bluesky are supported, and files.'));
+  assert.ok(flat.includes('A post with several videos gives the first one.'));
+  assert.ok(flat.includes('Update from 1.0.1 to use the new links.'));
+  assert.ok(!flat.includes('Only YouTube links'));
 });
 
 test('links to the pricing page instead of listing prices', () => {

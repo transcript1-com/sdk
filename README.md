@@ -1,6 +1,6 @@
 # @transcript1/sdk
 
-TypeScript SDK for the [transcript1](https://transcript1.com) transcription API. Transcribe YouTube links and audio or
+TypeScript SDK for the [transcript1](https://transcript1.com) transcription API. Transcribe video links from YouTube, X, TikTok, Instagram, Facebook and Bluesky, and audio or
 video files from server code, then download the transcript as text, SRT, VTT or JSON.
 
 Full documentation: https://transcript1.com/docs/sdk
@@ -45,8 +45,9 @@ await t1.transcribe(blob, { filename: 'call.mp3' }); // Blob (a File brings its 
 await t1.transcribe(stream, { filename: 'call.mp3', size: 4_200_000 }); // stream or async iterable
 ```
 
-Strings starting with `http://` or `https://` are links; other strings are file paths. Only YouTube links and files
-are supported for now. Files can be up to 2,000,000,000 bytes, with extensions mp3, wav, m4a, flac, ogg, opus, mp4, mov, webm or mkv.
+Strings starting with `http://` or `https://` are links; other strings are file paths. Links from YouTube, X, TikTok,
+Instagram, Facebook and Bluesky are supported, and files. A post with several videos gives the first one. Update from
+1.0.1 to use the new links. Files can be up to 2,000,000,000 bytes, with extensions mp3, wav, m4a, flac, ogg, opus, mp4, mov, webm or mkv.
 
 ## Download
 
@@ -84,7 +85,7 @@ await t1.transcriptions.delete(job.id); // cancels a running job, deletes a fini
 const account = await t1.account();
 ```
 
-`list` fetches pages as you iterate. Params: `status`, `platform` (`youtube` or `upload`), `limit` (page size, 1 to 100,
+`list` fetches pages as you iterate. Params: `status`, `platform` (`youtube`, `x`, `tiktok`, `instagram`, `facebook`, `bluesky` or `upload`), `limit` (page size, 1 to 100,
 API default 20) and `signal`.
 
 ## Options

@@ -1,3 +1,4 @@
+import type { LinkPlatformType } from '../inputs/types.js';
 import type { ProgressEvent, Status, Transcription } from '../types.js';
 
 export type WaitOptionsType = {
@@ -13,7 +14,7 @@ export type GetOptions = Omit<WaitOptionsType, 'transcription'> & {
 
 export type ListParams = {
   status?: Status;
-  platform?: 'youtube' | 'upload';
+  platform?: LinkPlatformType | 'upload';
   limit?: number;
   signal?: AbortSignal;
 };

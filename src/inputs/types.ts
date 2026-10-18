@@ -4,10 +4,13 @@ export type ChunkSourceType = {
   close(): Promise<void>;
 };
 
+export type LinkPlatformType = 'youtube' | 'x' | 'tiktok' | 'instagram' | 'facebook' | 'bluesky';
+
 export type LinkInputType = {
   kind: 'link';
   url: string;
-  videoId: string;
+  videoId: string | null;
+  platform: LinkPlatformType;
 };
 
 export type FileInputType = {

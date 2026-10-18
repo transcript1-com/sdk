@@ -57,11 +57,15 @@ export const buildTranscript = (job: JobType): Transcript => {
 };
 
 const buildSource = (job: JobType): TranscriptionSummary['source'] => {
+  if (job.platform === 'upload') {
+    return { platform: 'upload', filename: job.filename, size: job.size };
+  }
+
   if (job.platform === 'youtube') {
     return { platform: 'youtube', url: job.url, media_id: job.videoId };
   }
 
-  return { platform: 'upload', filename: job.filename, size: job.size };
+  return { platform: job.platform, url: job.url, media_id: null };
 };
 
 const buildMedia = (state: StateType, job: JobType): TranscriptionSummary['media'] => {

@@ -1,0 +1,160 @@
+{
+  "accept": [
+    {
+      "url": "https://x.com/jack/status/20",
+      "platform": "x"
+    },
+    {
+      "url": "https://twitter.com/jack/status/20?s=20&t=abc",
+      "platform": "x"
+    },
+    {
+      "url": "https://mobile.twitter.com/i/status/1234567890123456789",
+      "platform": "x"
+    },
+    {
+      "url": "https://www.x.com/i/web/status/1234567890123456789/",
+      "platform": "x"
+    },
+    {
+      "url": "http://mobile.x.com/User/status/123/video/1#top",
+      "platform": "x"
+    },
+    {
+      "url": "https://x.com/user/status/123/photo/2",
+      "platform": "x"
+    },
+    {
+      "url": "https://www.tiktok.com/@scout2015/video/6718335390845095173",
+      "platform": "tiktok"
+    },
+    {
+      "url": "https://m.tiktok.com/@a.b_c/video/7106594312292453675?is_from_webapp=1",
+      "platform": "tiktok"
+    },
+    {
+      "url": "https://vm.tiktok.com/ZMabcdEF/",
+      "platform": "tiktok"
+    },
+    {
+      "url": "https://VT.tiktok.com/ZSabc123/?share=x",
+      "platform": "tiktok"
+    },
+    {
+      "url": "https://tiktok.com/t/ZTabcd12/",
+      "platform": "tiktok"
+    },
+    {
+      "url": "https://www.instagram.com/reel/C0abcDEF123/",
+      "platform": "instagram"
+    },
+    {
+      "url": "https://instagram.com/reels/C0abcDEF123?igsh=xyz",
+      "platform": "instagram"
+    },
+    {
+      "url": "https://m.instagram.com/p/C0abc-_DEF1/?img_index=1",
+      "platform": "instagram"
+    },
+    {
+      "url": "https://www.instagram.com/tv/B1abcdEFG/",
+      "platform": "instagram"
+    },
+    {
+      "url": "https://www.instagram.com/natgeo/reel/C0abcDEF123/",
+      "platform": "instagram"
+    },
+    {
+      "url": "https://www.instagram.com/natgeo/p/C0abcDEF123",
+      "platform": "instagram"
+    },
+    {
+      "url": "https://www.facebook.com/NASA/videos/1234567890123456/",
+      "platform": "facebook"
+    },
+    {
+      "url": "https://m.facebook.com/NASA/videos/some-title/1234567890123456/?mibextid=x",
+      "platform": "facebook"
+    },
+    {
+      "url": "https://web.facebook.com/watch/?v=1234567890123456&ref=sharing",
+      "platform": "facebook"
+    },
+    {
+      "url": "https://facebook.com/watch?v=12345",
+      "platform": "facebook"
+    },
+    {
+      "url": "https://mbasic.facebook.com/video.php?v=1234567890123456&x=1",
+      "platform": "facebook"
+    },
+    {
+      "url": "https://www.facebook.com/reel/1234567890123456",
+      "platform": "facebook"
+    },
+    {
+      "url": "https://fb.watch/AbC_12-x/",
+      "platform": "facebook"
+    },
+    {
+      "url": "https://www.facebook.com/share/v/1AbCdEfGh/",
+      "platform": "facebook"
+    },
+    {
+      "url": "https://m.facebook.com/share/r/1AbCdEfGh/?mibextid=x",
+      "platform": "facebook"
+    },
+    {
+      "url": "https://bsky.app/profile/bsky.app/post/3l6oveex3ii2l",
+      "platform": "bluesky"
+    },
+    {
+      "url": "https://bsky.app/profile/Alice.Bsky.Social/post/3l6oveex3ii2l",
+      "platform": "bluesky"
+    },
+    {
+      "url": "https://bsky.app/profile/did:plc:z72i7hdynmk6r22z27h6tvur/post/3l6oveex3ii2l",
+      "platform": "bluesky"
+    },
+    {
+      "url": "https://bsky.app/profile/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.bsky.social/post/3l6oveex3ii2l",
+      "platform": "bluesky"
+    }
+  ],
+  "reject": [
+    "https://x.com/jack",
+    "https://x.com/jack/status/abc",
+    "https://x.com/jack/status/12345678901234567890123456",
+    "https://x.com/jack/status/20/analytics",
+    "https://x.com/jack/status/20/video",
+    "https://www.tiktok.com/@scout2015",
+    "https://www.tiktok.com/@scout2015/photo/7106594312292453675",
+    "https://www.tiktok.com/@scout2015/video/12345678901234",
+    "https://www.tiktok.com/@scout2015/live",
+    "https://vm.tiktok.com/ZMab",
+    "https://vm.tiktok.com/ZMabcdEF/extra",
+    "https://www.instagram.com/natgeo/",
+    "https://www.instagram.com/stories/natgeo/3123456789012345678/",
+    "https://www.instagram.com/reel/abc/",
+    "https://www.instagram.com/explore/tags/cats/",
+    "https://www.facebook.com/NASA",
+    "https://www.facebook.com/share/p/AbCdEf123/",
+    "https://www.facebook.com/watch?v=abc",
+    "https://www.facebook.com/NASA/videos/1234",
+    "https://www.facebook.com/watch/live/?v=123456",
+    "https://fb.watch/abc",
+    "https://bsky.app/profile/bsky.app",
+    "https://bsky.app/profile/bsky.app/post/3L6OVEEX3II2L",
+    "https://bsky.app/profile/bsky.app/post/3l6oveex3ii2",
+    "https://bsky.app/profile/did:web:example.com/post/3l6oveex3ii2l"
+  ],
+  "foreign": [
+    "https://vimeo.com/76979871",
+    "https://www.reddit.com/r/videos/comments/abc/",
+    "https://notx.com/jack/status/20",
+    "https://x.com.evil.example/jack/status/20",
+    "not a url",
+    "ftp://x.com/jack/status/20",
+    "https://www.bsky.app/profile/bsky.app/post/3l6oveex3ii2l"
+  ]
+}

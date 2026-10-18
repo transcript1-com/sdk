@@ -29,6 +29,8 @@ export const JOB_FAILURE_CODES = [
   'unsupported_media',
   'no_speech',
   'unsupported_language',
+  'login_required',
+  'no_audio',
   'insufficient_minutes',
   'fetch_failed',
   'transcription_failed',

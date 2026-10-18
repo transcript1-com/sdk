@@ -1,3 +1,5 @@
+import type { LinkPlatformType } from './inputs/types.js';
+
 export type Status =
   | 'awaiting_upload'
   | 'queued'
@@ -33,7 +35,7 @@ export type Transcript = {
 };
 
 export type LinkSource = {
-  platform: 'youtube';
+  platform: LinkPlatformType;
   url: string | null;
   media_id: string | null;
 };

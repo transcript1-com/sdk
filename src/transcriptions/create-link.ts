@@ -7,7 +7,6 @@ import type { CreateOptions, Transcription } from '../types.js';
 import { createSlotWaiter, type WaitSlotType } from './wait-slot.js';
 
 type LinkBodyType = {
-  platform: 'youtube';
   url: string;
   source?: CreateOptions['source'];
   language?: string;
@@ -22,7 +21,7 @@ type QueryType = {
 };
 
 const buildLinkBody = (link: LinkInputType, options: CreateOptions): LinkBodyType => {
-  const body: LinkBodyType = { platform: 'youtube', url: link.url };
+  const body: LinkBodyType = { url: link.url };
   if (options.source) {
     body.source = options.source;
   }
