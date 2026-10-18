@@ -11,6 +11,7 @@ export type {
   RequestErrorCode,
 } from './codes.js';
 export type { ClientOptions } from './config.js';
+export type { LinkPlatformType } from './inputs/types.js';
 export type {
   Account,
   Chunk,

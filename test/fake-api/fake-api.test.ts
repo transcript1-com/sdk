@@ -458,7 +458,14 @@ test('refuses bad create bodies with the envelope', async t => {
   const empty = await createUpload(fake, 'k3', { upload: { filename: 'a.mp3', size: 0 } });
 
   assert.deepEqual([platform.status, platform.json.error.code], [422, 'unsupported_platform']);
-  assert.deepEqual(platform.json.error.supported_platforms, ['youtube', 'x', 'tiktok', 'instagram', 'facebook', 'bluesky']);
+  assert.deepEqual(platform.json.error.supported_platforms, [
+    'youtube',
+    'x',
+    'tiktok',
+    'instagram',
+    'facebook',
+    'bluesky',
+  ]);
   assert.deepEqual([url.status, url.json.error.code], [422, 'invalid_url']);
   assert.deepEqual([extension.status, extension.json.error.code], [422, 'unsupported_media']);
   assert.deepEqual([big.status, big.json.error.code], [413, 'media_too_large']);

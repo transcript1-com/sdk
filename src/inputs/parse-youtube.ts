@@ -3,6 +3,12 @@ export type YoutubeVideoType = {
   canonicalUrl: string;
 };
 
+export const isYoutubeHost = (hostname: string): boolean => {
+  const host = hostname.toLowerCase().replace(/^www\./, '');
+
+  return ['youtube.com', 'm.youtube.com', 'music.youtube.com', 'youtu.be'].includes(host);
+};
+
 const isWatchPath = (segments: string[]): boolean => {
   if (segments.length !== 1) {
     return false;
@@ -48,10 +54,11 @@ export const parseYoutube = (raw: string): YoutubeVideoType | undefined => {
     return undefined;
   }
 
-  const host = url.hostname.toLowerCase().replace(/^www\./, '');
-  if (!['youtube.com', 'm.youtube.com', 'music.youtube.com', 'youtu.be'].includes(host)) {
+  if (!isYoutubeHost(url.hostname)) {
     return undefined;
   }
+
+  const host = url.hostname.toLowerCase().replace(/^www\./, '');
 
   const segments = url.pathname.split('/').filter(Boolean);
   const videoId = pickVideoId(host, segments, url);

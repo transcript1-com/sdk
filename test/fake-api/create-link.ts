@@ -107,7 +107,14 @@ export const createLink = (context: ContextType, key: string | undefined, body: 
     return;
   }
 
-  const params = JSON.stringify(['link', parsed.platform, parsed.videoId || parsed.url, body.source, body.language, body.diarize]);
+  const params = JSON.stringify([
+    'link',
+    parsed.platform,
+    parsed.videoId || parsed.url,
+    body.source,
+    body.language,
+    body.diarize,
+  ]);
   if (replay(state, res, key, params)) {
     return;
   }

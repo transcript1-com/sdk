@@ -51,6 +51,25 @@ test('turns a YouTube link into a link input with its canonical url', async () =
   });
 });
 
+test('keeps accepting YouTube hosts with a www prefix like 1.0.1', async () => {
+  const urls = [
+    'https://www.youtu.be/dQw4w9WgXcQ',
+    'https://www.m.youtube.com/watch?v=dQw4w9WgXcQ',
+    'https://www.music.youtube.com/watch?v=dQw4w9WgXcQ',
+  ];
+  for (const url of urls) {
+    // eslint-disable-next-line no-await-in-loop
+    const input = await classify(url, {});
+
+    assert.deepEqual(input, {
+      kind: 'link',
+      url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+      videoId: 'dQw4w9WgXcQ',
+      platform: 'youtube',
+    }, url);
+  }
+});
+
 test('treats an uppercase scheme as a link', async () => {
   const input = await classify('HTTPS://www.youtube.com/watch?v=dQw4w9WgXcQ', {});
 

@@ -1,10 +1,7 @@
+import { isYoutubeHost } from './parse-youtube.js';
 import type { LinkPlatformType } from './types.js';
 
 const PLATFORM_HOSTS: Array<{ platform: LinkPlatformType; hosts: string[] }> = [
-  {
-    platform: 'youtube',
-    hosts: ['youtube.com', 'www.youtube.com', 'm.youtube.com', 'music.youtube.com', 'youtu.be'],
-  },
   {
     platform: 'x',
     hosts: ['x.com', 'www.x.com', 'mobile.x.com', 'twitter.com', 'www.twitter.com', 'mobile.twitter.com'],
@@ -19,7 +16,14 @@ const PLATFORM_HOSTS: Array<{ platform: LinkPlatformType; hosts: string[] }> = [
   },
   {
     platform: 'facebook',
-    hosts: ['facebook.com', 'www.facebook.com', 'm.facebook.com', 'web.facebook.com', 'mbasic.facebook.com', 'fb.watch'],
+    hosts: [
+      'facebook.com',
+      'www.facebook.com',
+      'm.facebook.com',
+      'web.facebook.com',
+      'mbasic.facebook.com',
+      'fb.watch',
+    ],
   },
   {
     platform: 'bluesky',
@@ -40,6 +44,10 @@ export const detectLinkPlatform = (raw: string): LinkPlatformType | null => {
   }
 
   const host = url.hostname.toLowerCase();
+  if (isYoutubeHost(host)) {
+    return 'youtube';
+  }
+
   const match = PLATFORM_HOSTS.find(entry => entry.hosts.includes(host));
   if (!match) {
     return null;

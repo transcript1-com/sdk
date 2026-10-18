@@ -31,6 +31,12 @@ test('detects every YouTube host', () => {
   }
 });
 
+test('detects a YouTube host with a www prefix', () => {
+  assert.equal(detectLinkPlatform('https://www.youtu.be/dQw4w9WgXcQ'), 'youtube');
+  assert.equal(detectLinkPlatform('https://www.m.youtube.com/watch?v=dQw4w9WgXcQ'), 'youtube');
+  assert.equal(detectLinkPlatform('https://www.music.youtube.com/watch?v=dQw4w9WgXcQ'), 'youtube');
+});
+
 test('detects the short link hosts', () => {
   assert.equal(detectLinkPlatform('https://vm.tiktok.com/ZMabcdEF/'), 'tiktok');
   assert.equal(detectLinkPlatform('https://vt.tiktok.com/ZSabc123/'), 'tiktok');
