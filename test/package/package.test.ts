@@ -129,6 +129,16 @@ test('packs only package.json, README.md, LICENSE and compiled dist files', () =
   assert.deepEqual(top, ['LICENSE', 'README.md', 'package.json']);
 });
 
+test('manifest links the repository and issue tracker', async () => {
+  const manifest = JSON.parse(await readFile(join(root, 'package.json'), 'utf8')) as Record<string, unknown>;
+
+  assert.deepEqual(manifest.repository, { type: 'git', url: 'git+https://github.com/transcript1-com/sdk.git' });
+  assert.deepEqual(manifest.bugs, {
+    email: 'support@transcript1.com',
+    url: 'https://github.com/transcript1-com/sdk/issues',
+  });
+});
+
 test('packs exactly one .js and one .d.ts for every source file', async () => {
   const dist = tarballFiles.filter(path => path.startsWith('dist/'));
 
