@@ -33,5 +33,5 @@ export const classifyData = (input: unknown, options: ClassifyOptionsType): File
     return classifyStream(input, options);
   }
 
-  throw buildInvalidInputError('Unsupported input: pass a YouTube link, a file path, a Uint8Array, a Blob or a stream');
+  throw buildInvalidInputError('Unsupported input: pass a link, a file path, a Uint8Array, a Blob or a stream');
 };

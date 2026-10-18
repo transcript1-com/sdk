@@ -139,5 +139,5 @@ test('accepts a stream declared at exactly 2 GB without reading it', async () =>
 });
 
 test('refuses a value that is not an input', async () => {
-  await assertInvalidInput(async () => classify(42 as never, { filename: 'talk.mp3' }), /^Unsupported input: pass a YouTube link/);
+  await assertInvalidInput(async () => classify(42 as never, { filename: 'talk.mp3' }), /^Unsupported input: pass a link/);
 });
