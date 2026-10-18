@@ -102,6 +102,7 @@ test('lists every job failure code and the local codes', () => {
     'no_captions',
     'no_speech',
     'transcription_failed',
+    'unsupported_language',
     'unsupported_media',
   ]);
   assert.deepEqual([...LOCAL_CODES].sort(), [

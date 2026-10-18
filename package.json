@@ -1,6 +1,6 @@
 {
   "name": "@transcript1/sdk",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "TypeScript SDK for the transcript1 transcription API",
   "license": "MIT",
   "type": "module",

@@ -111,7 +111,7 @@ before(async () => {
   tarballFiles = packed.files.map(file => file.path).sort();
   const manifest = {
     name: 'consumer',
-    version: '1.0.0',
+    version: '1.0.1',
     private: true,
     type: 'module',
   };
