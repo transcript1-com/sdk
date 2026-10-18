@@ -1,7 +1,8 @@
 # @transcript1/sdk
 
-TypeScript SDK for the [transcript1](https://transcript1.com) transcription API. Transcribe video links from YouTube, X, TikTok, Instagram, Facebook and Bluesky, and audio or
-video files from server code, then download the transcript as text, SRT, VTT or JSON.
+TypeScript SDK for the [transcript1](https://transcript1.com) transcription API. Transcribe public videos from YouTube, X,
+TikTok, Instagram, Facebook and Bluesky or upload audio and video files from server code.
+Download transcripts as text, SRT, VTT or JSON.
 
 Full documentation: https://transcript1.com/docs/sdk
 
@@ -45,9 +46,10 @@ await t1.transcribe(blob, { filename: 'call.mp3' }); // Blob (a File brings its 
 await t1.transcribe(stream, { filename: 'call.mp3', size: 4_200_000 }); // stream or async iterable
 ```
 
-Strings starting with `http://` or `https://` are links; other strings are file paths. Links from YouTube, X, TikTok,
-Instagram, Facebook and Bluesky are supported, and files. A post with several videos gives the first one. Update from
-1.0.1 to use the new links. Files can be up to 2,000,000,000 bytes, with extensions mp3, wav, m4a, flac, ogg, opus, mp4, mov, webm or mkv.
+Strings starting with `http://` or `https://` are links; other strings are file paths. Use public video links from YouTube,
+X, TikTok, Instagram, Facebook and Bluesky or upload audio and video files. For posts with several videos, only the first
+video is transcribed. SDK 1.0.1 and older accept only YouTube links. Update to 1.1.0 to use links from the other platforms.
+Files can be up to 2,000,000,000 bytes, with extensions mp3, wav, m4a, flac, ogg, opus, mp4, mov, webm or mkv.
 
 ## Download
 
@@ -85,8 +87,8 @@ await t1.transcriptions.delete(job.id); // cancels a running job, deletes a fini
 const account = await t1.account();
 ```
 
-`list` fetches pages as you iterate. Params: `status`, `platform` (`youtube`, `x`, `tiktok`, `instagram`, `facebook`, `bluesky` or `upload`), `limit` (page size, 1 to 100,
-API default 20) and `signal`.
+`list` fetches pages as you iterate. Params: `status`, `platform`, `limit` (page size, 1 to 100, API default 20) and `signal`.
+Filter by `platform` with `youtube`, `x`, `tiktok`, `instagram`, `facebook`, `bluesky` or `upload`.
 
 ## Options
 

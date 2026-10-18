@@ -12,9 +12,9 @@ test('states the runtimes without promising more than the tests cover', () => {
 });
 
 test('names the six platforms and the first-video limit', () => {
-  assert.ok(flat.includes('Links from YouTube, X, TikTok, Instagram, Facebook and Bluesky are supported, and files.'));
-  assert.ok(flat.includes('A post with several videos gives the first one.'));
-  assert.ok(flat.includes('Update from 1.0.1 to use the new links.'));
+  assert.ok(flat.includes('Use public video links from YouTube, X, TikTok, Instagram, Facebook and Bluesky or upload audio and video files.'));
+  assert.ok(flat.includes('For posts with several videos, only the first video is transcribed.'));
+  assert.ok(flat.includes('SDK 1.0.1 and older accept only YouTube links. Update to 1.1.0 to use links from the other platforms.'));
   assert.ok(!flat.includes('Only YouTube links'));
 });
 
