@@ -7,6 +7,14 @@ import { addJob, refuseStart, startJob } from './jobs.js';
 import type { JobType, StateType } from './state.js';
 
 const PLATFORMS = ['youtube', 'x', 'tiktok', 'instagram', 'facebook', 'bluesky'];
+const NAMES: Record<string, string> = {
+  youtube: 'YouTube',
+  x: 'X',
+  tiktok: 'TikTok',
+  instagram: 'Instagram',
+  facebook: 'Facebook',
+  bluesky: 'Bluesky',
+};
 const DAY_MS = 24 * 60 * 60 * 1000;
 const VIDEO_ID = /(?:youtu\.be\/|[?&]v=|\/(?:shorts|embed|live)\/)([\w-]{11})(?![\w-])/;
 
@@ -88,12 +96,13 @@ export const createLink = (context: ContextType, key: string | undefined, body: 
 
   const parsed = parseLink(body.url);
   if (!parsed) {
-    sendError(res, 422, ERROR_CODES.invalid_url, 'Not a supported link');
+    sendError(res, 422, ERROR_CODES.invalid_url, 'Not a supported link. Use a YouTube, X, TikTok, Instagram, Facebook or Bluesky link.');
     return;
   }
 
   if (isPlatformGiven && body.platform !== parsed.platform) {
-    sendError(res, 422, ERROR_CODES.invalid_url, 'The link is from another platform');
+    const message = `This link is from ${NAMES[parsed.platform]}, not ${NAMES[String(body.platform)]}.`;
+    sendError(res, 422, ERROR_CODES.invalid_url, message);
     return;
   }
 
