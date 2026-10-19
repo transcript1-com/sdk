@@ -74,7 +74,13 @@ const finished = await t1.transcriptions.get(job.id, { wait: true }); // until i
 ```
 
 `get(id, { wait: true })` returns the finished object whether its status is `completed`, `failed` or `canceled`.
-Check the status before reading its transcript. Pass `includeWords: true` to include word timings.
+Check the status before reading its transcript. Pass `includeWords: true` to request word timings when available.
+
+YouTube and X use captions when available with `source: 'auto'`, falling back to AI transcription.
+`source: 'captions'` is supported only for YouTube and X and never falls back to AI; other platforms use AI transcription.
+Speaker labels require AI transcription. Captions and AI transcription have the same per-minute price.
+`transcript_source` is `youtube_captions`, `x_captions` or `speech_to_text`.
+X VTT captions have segment timing only, with `words: null`, including auto-generated tracks.
 
 ## List, delete, account
 

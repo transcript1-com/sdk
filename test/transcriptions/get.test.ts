@@ -2,8 +2,10 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { create } from '../../src/transcriptions/create.js';
 import { get } from '../../src/transcriptions/get.js';
+import type { Transcription } from '../../src/types.js';
 import {
   buildReply,
+  buildJsonReply,
   createScriptedFetch,
   createTestConfig,
   expectRejection,
@@ -58,6 +60,21 @@ test('returns the transcript of a completed job', async t => {
 
   assert.equal(done.status, 'completed');
   assert.equal(done.transcript?.text, 'Welcome to the show. Thanks for having me.');
+});
+
+test('preserves completed X caption provenance and null word timings', async () => {
+  const source: NonNullable<Transcription['transcript_source']> = 'x_captions';
+  const reply = {
+    id: 'tr_x', status: 'completed', transcript_source: source, caption_kind: 'auto_generated',
+    transcript: {
+      text: 'Example.', speakers: [], segments: [{
+        start: 0, end: 1, text: 'Example.', speaker: null, language: 'en', words: null,
+      }],
+    },
+  };
+  const stub = createScriptedFetch([buildJsonReply(200, reply)]);
+  const { config } = createTestConfig({ fetch: stub.fetch });
+  assert.deepEqual(await get(config, 'tr_x', { includeWords: true }), reply);
 });
 
 test('rejects an unknown id with not_found', async t => {

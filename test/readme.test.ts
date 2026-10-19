@@ -23,3 +23,9 @@ test('links to the pricing page instead of listing prices', () => {
   assert.ok(!flat.includes('$9'));
   assert.ok(!flat.includes('$90'));
 });
+
+test('explains X captions and their segment-only timing', () => {
+  for (const fact of ['YouTube and X', 'x_captions', 'youtube_captions', 'speech_to_text', 'words: null', 'same per-minute price']) {
+    assert.ok(flat.includes(fact), fact);
+  }
+});
