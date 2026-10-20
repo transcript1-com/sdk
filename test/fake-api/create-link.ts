@@ -6,7 +6,17 @@ import { sendError, type ContextType } from './http.js';
 import { addJob, refuseStart, startJob } from './jobs.js';
 import type { JobType, StateType } from './state.js';
 
-const PLATFORMS = ['youtube', 'x', 'tiktok', 'instagram', 'facebook', 'bluesky'];
+const PLATFORMS = ['youtube',
+  'x',
+  'tiktok',
+  'instagram',
+  'facebook',
+  'bluesky',
+  'twitch',
+  'dailymotion',
+  'pinterest',
+  'linkedin',
+  'snapchat'];
 const NAMES: Record<string, string> = {
   youtube: 'YouTube',
   x: 'X',
@@ -14,6 +24,11 @@ const NAMES: Record<string, string> = {
   instagram: 'Instagram',
   facebook: 'Facebook',
   bluesky: 'Bluesky',
+  twitch: 'Twitch',
+  dailymotion: 'Dailymotion',
+  pinterest: 'Pinterest',
+  linkedin: 'LinkedIn',
+  snapchat: 'Snapchat',
 };
 const DAY_MS = 24 * 60 * 60 * 1000;
 const VIDEO_ID = /(?:youtu\.be\/|[?&]v=|\/(?:shorts|embed|live)\/)([\w-]{11})(?![\w-])/;
@@ -96,7 +111,7 @@ export const createLink = (context: ContextType, key: string | undefined, body: 
 
   const parsed = parseLink(body.url);
   if (!parsed) {
-    sendError(res, 422, ERROR_CODES.invalid_url, 'Not a supported link. Use a YouTube, X, TikTok, Instagram, Facebook or Bluesky link.');
+    sendError(res, 422, ERROR_CODES.invalid_url, 'Not a supported link. Use a supported public video link.');
     return;
   }
 
@@ -108,6 +123,11 @@ export const createLink = (context: ContextType, key: string | undefined, body: 
 
   if (!isSource(body.source)) {
     sendError(res, 422, ERROR_CODES.invalid_request, 'source must be auto, captions or stt');
+    return;
+  }
+
+  if (body.source === 'captions' && ['twitch', 'dailymotion', 'pinterest', 'linkedin', 'snapchat'].includes(parsed.platform)) {
+    sendError(res, 422, ERROR_CODES.invalid_request, `${parsed.platform} does not support source captions`);
     return;
   }
 

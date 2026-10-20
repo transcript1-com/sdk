@@ -1,5 +1,11 @@
 {
   "accept": [
+    { "url": "https://www.twitch.tv/videos/6528877?t=30", "platform": "twitch" },
+    { "url": "https://clips.twitch.tv/FaintLightGullWholeWheat", "platform": "twitch" },
+    { "url": "https://www.dailymotion.com/video/x123", "platform": "dailymotion" },
+    { "url": "https://www.pinterest.com/pin/123/", "platform": "pinterest" },
+    { "url": "https://www.linkedin.com/feed/update/urn:li:activity:123/", "platform": "linkedin" },
+    { "url": "https://www.snapchat.com/spotlight/Ab_C", "platform": "snapchat" },
     {
       "url": "https://x.com/jack/status/20",
       "platform": "x"

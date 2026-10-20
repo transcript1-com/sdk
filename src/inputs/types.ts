@@ -4,7 +4,8 @@ export type ChunkSourceType = {
   close(): Promise<void>;
 };
 
-export type LinkPlatformType = 'youtube' | 'x' | 'tiktok' | 'instagram' | 'facebook' | 'bluesky';
+export type LinkPlatformType = 'youtube' | 'x' | 'tiktok' | 'instagram' | 'facebook' | 'bluesky'
+| 'twitch' | 'dailymotion' | 'pinterest' | 'linkedin' | 'snapchat';
 
 export type LinkInputType = {
   kind: 'link';

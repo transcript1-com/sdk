@@ -29,6 +29,11 @@ const PLATFORM_HOSTS: Array<{ platform: LinkPlatformType; hosts: string[] }> = [
     platform: 'bluesky',
     hosts: ['bsky.app'],
   },
+  { platform: 'twitch', hosts: ['twitch.tv', 'www.twitch.tv', 'm.twitch.tv', 'go.twitch.tv', 'clips.twitch.tv'] },
+  { platform: 'dailymotion', hosts: ['dailymotion.com', 'www.dailymotion.com', 'touch.dailymotion.com', 'dai.ly'] },
+  { platform: 'pinterest', hosts: ['pinterest.com', 'www.pinterest.com'] },
+  { platform: 'linkedin', hosts: ['linkedin.com', 'www.linkedin.com'] },
+  { platform: 'snapchat', hosts: ['snapchat.com', 'www.snapchat.com'] },
 ];
 
 export const detectLinkPlatform = (raw: string): LinkPlatformType | null => {
@@ -50,6 +55,12 @@ export const detectLinkPlatform = (raw: string): LinkPlatformType | null => {
 
   const match = PLATFORM_HOSTS.find(entry => entry.hosts.includes(host));
   if (!match) {
+    return null;
+  }
+
+  if (['twitch', 'dailymotion', 'pinterest', 'linkedin', 'snapchat'].includes(match.platform)
+    && (url.protocol !== 'https:' || url.username || url.password || url.port
+      || /^[a-z]+:\/\/[^/]*@/i.test(raw.trim()))) {
     return null;
   }
 

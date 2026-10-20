@@ -93,7 +93,12 @@ export const examples = async (buffer: Buffer, blob: Blob): Promise<void> => {
     console.log(uploaded);
   }
 
-  // @ts-expect-error only youtube and upload are listable platforms
+  for (const platform of ['twitch', 'dailymotion', 'pinterest', 'linkedin', 'snapchat'] as const) {
+    const supported: ListParams = { platform };
+    console.log(supported);
+  }
+
+  // @ts-expect-error Vimeo is not a supported platform
   const unknownPlatform: ListParams = { platform: 'vimeo' };
   console.log(unknownPlatform);
 

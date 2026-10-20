@@ -1,7 +1,7 @@
 # @transcript1/sdk
 
-TypeScript SDK for the [transcript1](https://transcript1.com) transcription API. Transcribe public videos from YouTube, X,
-TikTok, Instagram, Facebook and Bluesky or upload audio and video files from server code.
+TypeScript SDK for the [transcript1](https://transcript1.com) transcription API. Transcribe supported public video links
+or upload audio and video files from server code.
 Download transcripts as text, SRT, VTT or JSON.
 
 Full documentation: https://transcript1.com/docs/sdk
@@ -46,9 +46,14 @@ await t1.transcribe(blob, { filename: 'call.mp3' }); // Blob (a File brings its 
 await t1.transcribe(stream, { filename: 'call.mp3', size: 4_200_000 }); // stream or async iterable
 ```
 
-Strings starting with `http://` or `https://` are links; other strings are file paths. Use public video links from YouTube,
-X, TikTok, Instagram, Facebook and Bluesky or upload audio and video files. For posts with several videos, only the first
-video is transcribed. SDK 1.0.1 and older accept only YouTube links. Update to 1.1.0 to use links from the other platforms.
+Strings starting with `http://` or `https://` are links; other strings are file paths. Use public video links from
+YouTube, X, TikTok, Instagram, Facebook, Bluesky, Twitch, Dailymotion, Pinterest, LinkedIn and Snapchat or upload audio and video files.
+The additional sources accept HTTPS links to completed Twitch VODs/clips, Dailymotion videos, native Pinterest video pins,
+LinkedIn public video posts and Snapchat Spotlight. No supplied account cookies, private/login-required content, live streams
+or collections. Pinterest selects its first native video block, not external embeds. See the exact accepted hosts and paths
+in [Sources and options](https://transcript1.com/docs/sources-and-options). URL time parameters do not trim media.
+These sources use `auto` or `stt`, not `captions`. Keep returned `media_id` strings opaque, including Twitch clip and Spotlight IDs.
+Older SDK releases may reject new links locally; use a release that includes the required platform.
 Files can be up to 2,000,000,000 bytes, with extensions mp3, wav, m4a, flac, ogg, opus, mp4, mov, webm or mkv.
 
 ## Download
@@ -94,7 +99,7 @@ const account = await t1.account();
 ```
 
 `list` fetches pages as you iterate. Params: `status`, `platform`, `limit` (page size, 1 to 100, API default 20) and `signal`.
-Filter by `platform` with `youtube`, `x`, `tiktok`, `instagram`, `facebook`, `bluesky` or `upload`.
+Filter by `platform` with `youtube`, `x`, `tiktok`, `instagram`, `facebook`, `bluesky`, `twitch`, `dailymotion`, `pinterest`, `linkedin`, `snapchat` or `upload`.
 
 ## Options
 

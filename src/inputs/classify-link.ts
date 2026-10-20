@@ -3,7 +3,7 @@ import { buildInvalidInputError } from './invalid-input.js';
 import { parseYoutube } from './parse-youtube.js';
 import type { LinkInputType } from './types.js';
 
-const UNSUPPORTED_LINK = 'Use a YouTube, X, TikTok, Instagram, Facebook or Bluesky link, or upload a file';
+const UNSUPPORTED_LINK = 'Use a supported public video link, or upload a file';
 
 const classifyYoutube = (raw: string): LinkInputType => {
   const video = parseYoutube(raw);

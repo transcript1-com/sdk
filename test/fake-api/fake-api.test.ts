@@ -449,6 +449,23 @@ test('creates link jobs without a platform and reports the detected one', async 
   assert.deepEqual([mismatch.status, mismatch.json.error.code], [422, 'invalid_url']);
 });
 
+for (const [platform, url] of [
+  ['twitch', 'https://clips.twitch.tv/SomeClip?t=30'],
+  ['dailymotion', 'https://www.dailymotion.com/video/x123?t=30'],
+  ['pinterest', 'https://www.pinterest.com/pin/123/'],
+  ['linkedin', 'https://www.linkedin.com/feed/update/urn:li:activity:123/'],
+  ['snapchat', 'https://www.snapchat.com/spotlight/Ab_C'],
+] as const) {
+  test(`${platform} requests preserve the URL and refuse caption-only source`, async t => {
+    const fake = await startApi(t);
+    const created = await createLink(fake, { platform, url, source: 'stt' });
+    assert.equal(created.status, 202);
+    assert.deepEqual(created.json.source, { platform, url, media_id: null });
+    const captions = await createLink(fake, { platform, url, source: 'captions' });
+    assert.deepEqual([captions.status, captions.json.error.code], [422, 'invalid_request']);
+  });
+}
+
 test('refuses bad create bodies with the envelope', async t => {
   const fake = await startApi(t);
   const platform = await createLink(fake, { platform: 'vimeo' });
@@ -465,6 +482,11 @@ test('refuses bad create bodies with the envelope', async t => {
     'instagram',
     'facebook',
     'bluesky',
+    'twitch',
+    'dailymotion',
+    'pinterest',
+    'linkedin',
+    'snapchat',
   ]);
   assert.deepEqual([url.status, url.json.error.code], [422, 'invalid_url']);
   assert.deepEqual([extension.status, extension.json.error.code], [422, 'unsupported_media']);

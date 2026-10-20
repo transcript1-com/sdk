@@ -77,6 +77,21 @@ test('preserves completed X caption provenance and null word timings', async () 
   assert.deepEqual(await get(config, 'tr_x', { includeWords: true }), reply);
 });
 
+test('preserves opaque new-platform media IDs without hashing or truncation', async () => {
+  const mediaId = 'e9637d63a71ec7c30f1dfb1288cee9d53e010f60d4594c204d16fb04ace52e1a';
+  const reply = {
+    id: 'tr_clip', object: 'transcription', status: 'completed',
+    source: { platform: 'twitch', url: 'https://clips.twitch.tv/FaintLightGullWholeWheat', media_id: mediaId },
+    transcript_source: 'speech_to_text', caption_kind: null,
+  };
+  const stub = createScriptedFetch([buildJsonReply(200, reply)]);
+  const { config } = createTestConfig({ fetch: stub.fetch });
+  const result = await get(config, 'tr_clip');
+  assert.ok(result.source.platform !== 'upload');
+  assert.equal(result.source.media_id, mediaId);
+  assert.equal(result.source.platform, 'twitch');
+});
+
 test('rejects an unknown id with not_found', async t => {
   const fake = await startApi(t);
   const { config } = createApiConfig(fake);

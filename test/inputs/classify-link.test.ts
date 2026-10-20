@@ -5,7 +5,7 @@ import { classify } from '../../src/inputs/classify.js';
 import { classifyLink } from '../../src/inputs/classify-link.js';
 import { assertInvalidInput } from './helpers.js';
 
-const UNSUPPORTED = 'Use a YouTube, X, TikTok, Instagram, Facebook or Bluesky link, or upload a file';
+const UNSUPPORTED = 'Use a supported public video link, or upload a file';
 
 type FixtureType = {
   accept: Array<{ url: string; platform: string }>;

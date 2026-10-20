@@ -66,6 +66,25 @@ test('sends source, language and diarize only when they are given', async t => {
   assert.deepEqual(parseBody(second), { url: CANONICAL });
 });
 
+for (const [platform, url] of [
+  ['twitch', 'https://clips.twitch.tv/SomeClip?t=30'],
+  ['dailymotion', 'https://www.dailymotion.com/video/x123?t=30'],
+  ['pinterest', 'https://www.pinterest.com/pin/123/'],
+  ['linkedin', 'https://www.linkedin.com/feed/update/urn:li:activity:123/'],
+  ['snapchat', 'https://www.snapchat.com/spotlight/Ab_C'],
+] as const) {
+  test(`creates ${platform} through the SDK without trimming or overriding source options`, async t => {
+    const fake = await startApi(t);
+    const { config } = createApiConfig(fake);
+    const created = await create(config, url, { source: 'stt', speakers: true, language: 'pl' });
+    assert.deepEqual(parseBody(findCreates(fake)[0]), {
+      url, source: 'stt', diarize: true, language: 'pl',
+    });
+    assert.equal(created.source.platform, platform);
+    assert.equal(created.source.url, url);
+  });
+}
+
 test('drops reuse_recent when fresh is set', async t => {
   const fake = await startApi(t);
   const { config } = createApiConfig(fake);
