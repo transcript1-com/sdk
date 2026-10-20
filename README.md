@@ -52,7 +52,7 @@ The additional sources accept HTTPS links to completed Twitch VODs/clips, Dailym
 LinkedIn public video posts and Snapchat Spotlight. No supplied account cookies, private/login-required content, live streams
 or collections. Pinterest selects its first native video block, not external embeds. See the exact accepted hosts and paths
 in [Sources and options](https://transcript1.com/docs/sources-and-options). URL time parameters do not trim media.
-These sources use `auto` or `stt`, not `captions`. Keep returned `media_id` strings opaque, including Twitch clip and Spotlight IDs.
+Twitch, Pinterest and Snapchat use `auto` or `stt`, not `captions`. Keep returned `media_id` strings opaque, including Twitch clip and Spotlight IDs.
 Older SDK releases may reject new links locally; use a release that includes the required platform.
 Files can be up to 2,000,000,000 bytes, with extensions mp3, wav, m4a, flac, ogg, opus, mp4, mov, webm or mkv.
 
@@ -81,11 +81,18 @@ const finished = await t1.transcriptions.get(job.id, { wait: true }); // until i
 `get(id, { wait: true })` returns the finished object whether its status is `completed`, `failed` or `canceled`.
 Check the status before reading its transcript. Pass `includeWords: true` to request word timings when available.
 
-YouTube and X use captions when available with `source: 'auto'`, falling back to AI transcription.
-`source: 'captions'` is supported only for YouTube and X and never falls back to AI; other platforms use AI transcription.
+YouTube and X, plus TikTok, Bluesky, Dailymotion and LinkedIn, use native captions when a usable track is available
+with `source: 'auto'`, falling back to AI transcription. `source: 'captions'` is supported on these six platforms
+and never falls back to AI. Other platforms use AI transcription; Facebook caption retrieval remains unproven and is not enabled.
+Dailymotion supports direct SRT, not caption playlists. Bluesky captions require a supported trusted PDS (not arbitrary
+federated hosts). LinkedIn supports public native posts, not LinkedIn Learning.
 Speaker labels require AI transcription. Captions and AI transcription have the same per-minute price.
-`transcript_source` is `youtube_captions`, `x_captions` or `speech_to_text`.
-X VTT captions have segment timing only, with `words: null`, including auto-generated tracks.
+`transcript_source` is `youtube_captions`, `x_captions`, `tiktok_captions`, `bluesky_captions`,
+`dailymotion_captions`, `linkedin_captions` or `speech_to_text`.
+`caption_kind` is `manual`, `auto_generated` or null. Null can mean native metadata does not establish authorship;
+it does not imply manual captions. Dailymotion `en-auto`/`fr-auto` tracks are auto-generated.
+X and the four new native caption paths have segment timing only, with `words: null`, and no speaker labels.
+`source: 'stt'` and speaker identification bypass captions; `source: 'captions'` cannot be combined with speakers or uploads.
 
 ## List, delete, account
 

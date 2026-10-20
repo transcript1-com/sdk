@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { request } from '../../src/http/request.js';
 import { create } from '../../src/transcriptions/create.js';
+import { get } from '../../src/transcriptions/get.js';
 import { expectRejection } from '../http/helpers.js';
 import {
   CANONICAL,
@@ -95,6 +96,27 @@ test('drops reuse_recent when fresh is set', async t => {
   assert.equal(findCreates(fake)[1]?.query.get('wait'), '0');
   assert.notEqual(second.id, first.id);
 });
+
+for (const [platform, url, provenance] of [
+  ['x', 'https://x.com/jack/status/20', 'x_captions'],
+  ['tiktok', 'https://www.tiktok.com/@example/video/6718335390845095173', 'tiktok_captions'],
+  ['bluesky', 'https://bsky.app/profile/alice.bsky.social/post/3lbpqwzq2bk2j', 'bluesky_captions'],
+  ['dailymotion', 'https://www.dailymotion.com/video/x123', 'dailymotion_captions'],
+  ['linkedin', 'https://www.linkedin.com/feed/update/urn:li:activity:123/', 'linkedin_captions'],
+] as const) {
+  test(`accepts ${platform} captions through create and preserves unknown provenance in the fake`, async t => {
+    const fake = await startApi(t);
+    const { config } = createApiConfig(fake);
+    const created = await create(config, url, { source: 'captions', language: 'en' });
+    const done = await get(config, created.id, { wait: true, includeWords: true });
+    assert.equal(done.transcript_source, provenance);
+    assert.equal(done.caption_kind, null);
+    assert.equal(done.source.platform, platform);
+    assert.deepEqual(done.transcript?.speakers, []);
+    assert.equal(done.transcript?.segments[0]?.words, null);
+    assert.deepEqual(parseBody(findCreates(fake)[0]), { url, source: 'captions', language: 'en' });
+  });
+}
 
 test('reuses a recent job of the same link without fresh', async t => {
   const fake = await startApi(t);

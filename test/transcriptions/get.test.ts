@@ -77,6 +77,30 @@ test('preserves completed X caption provenance and null word timings', async () 
   assert.deepEqual(await get(config, 'tr_x', { includeWords: true }), reply);
 });
 
+for (const [platform, source] of [
+  ['tiktok', 'tiktok_captions'],
+  ['bluesky', 'bluesky_captions'],
+  ['dailymotion', 'dailymotion_captions'],
+  ['linkedin', 'linkedin_captions'],
+] as const) {
+  test(`preserves typed ${platform} caption provenance with unknown authorship`, async () => {
+    const provenance: NonNullable<Transcription['transcript_source']> = source;
+    const reply = {
+      id: 'tr_native', object: 'transcription', status: 'completed',
+      source: { platform, url: null, media_id: 'opaque' },
+      transcript_source: provenance, caption_kind: null,
+      transcript: {
+        text: 'Native captions.', speakers: [], segments: [{
+          start: 0, end: 1, text: 'Native captions.', speaker: null, language: 'en', words: null,
+        }],
+      },
+    };
+    const stub = createScriptedFetch([buildJsonReply(200, reply)]);
+    const { config } = createTestConfig({ fetch: stub.fetch });
+    assert.deepEqual(await get(config, 'tr_native', { includeWords: true }), reply);
+  });
+}
+
 test('preserves opaque new-platform media IDs without hashing or truncation', async () => {
   const mediaId = 'e9637d63a71ec7c30f1dfb1288cee9d53e010f60d4594c204d16fb04ace52e1a';
   const reply = {

@@ -1,6 +1,7 @@
 import { ERROR_CODES } from '../../src/codes.js';
 import { detectLinkPlatform } from '../../src/inputs/detect-platform.js';
 import type { LinkPlatformType } from '../../src/inputs/types.js';
+import { captionSource } from './captions.js';
 import { replay, writeCreated, type CreateBodyType } from './created.js';
 import { sendError, type ContextType } from './http.js';
 import { addJob, refuseStart, startJob } from './jobs.js';
@@ -126,7 +127,7 @@ export const createLink = (context: ContextType, key: string | undefined, body: 
     return;
   }
 
-  if (body.source === 'captions' && ['twitch', 'dailymotion', 'pinterest', 'linkedin', 'snapchat'].includes(parsed.platform)) {
+  if (body.source === 'captions' && !captionSource(parsed.platform)) {
     sendError(res, 422, ERROR_CODES.invalid_request, `${parsed.platform} does not support source captions`);
     return;
   }

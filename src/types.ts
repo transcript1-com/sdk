@@ -88,7 +88,8 @@ export type Transcription = {
   source: LinkSource | UploadSource;
   media: Media | null;
   options: TranscriptionOptions;
-  transcript_source: 'youtube_captions' | 'x_captions' | 'speech_to_text' | null;
+  transcript_source: 'youtube_captions' | 'x_captions' | 'tiktok_captions' | 'bluesky_captions'
+  | 'dailymotion_captions' | 'linkedin_captions' | 'speech_to_text' | null;
   caption_kind: 'manual' | 'auto_generated' | null;
   language: string | null;
   billed_minutes: number | null;

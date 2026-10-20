@@ -456,13 +456,25 @@ for (const [platform, url] of [
   ['linkedin', 'https://www.linkedin.com/feed/update/urn:li:activity:123/'],
   ['snapchat', 'https://www.snapchat.com/spotlight/Ab_C'],
 ] as const) {
-  test(`${platform} requests preserve the URL and refuse caption-only source`, async t => {
+  test(`${platform} requests preserve the URL and enforce qualified caption capability`, async t => {
     const fake = await startApi(t);
     const created = await createLink(fake, { platform, url, source: 'stt' });
     assert.equal(created.status, 202);
     assert.deepEqual(created.json.source, { platform, url, media_id: null });
     const captions = await createLink(fake, { platform, url, source: 'captions' });
-    assert.deepEqual([captions.status, captions.json.error.code], [422, 'invalid_request']);
+    if (['dailymotion', 'linkedin'].includes(platform)) {
+      assert.equal(captions.status, 202);
+    } else {
+      assert.deepEqual([captions.status, captions.json.error.code], [422, 'invalid_request']);
+    }
+  });
+}
+
+for (const url of ['https://www.instagram.com/reel/C0abcDEF123', 'https://www.facebook.com/watch/?v=123']) {
+  test(`refuses unqualified captions rather than inventing support for ${url}`, async t => {
+    const fake = await startApi(t);
+    const response = await createLink(fake, { platform: undefined, url, source: 'captions' });
+    assert.deepEqual([response.status, response.json.error.code], [422, 'invalid_request']);
   });
 }
 

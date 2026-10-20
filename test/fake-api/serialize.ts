@@ -5,6 +5,7 @@ import type {
   Transcription,
   TranscriptionSummary,
 } from '../../src/types.js';
+import { captionSource } from './captions.js';
 import type { JobType, StateType } from './state.js';
 
 type RenderFormatType = Exclude<Format, 'json'>;
@@ -34,6 +35,10 @@ const buildSegments = (job: JobType): Segment[] => {
     };
     if (job.diarize) {
       built.speaker = segment.speaker;
+    }
+
+    if (usesCaptions(job)) {
+      built.words = null;
     }
 
     segments.push(built);
@@ -85,7 +90,7 @@ const buildError = (job: JobType): TranscriptionSummary['error'] => {
 };
 
 const usesCaptions = (job: JobType): boolean => {
-  if (job.platform !== 'youtube') {
+  if (!captionSource(job.platform)) {
     return false;
   }
 
@@ -125,8 +130,8 @@ export const serialize = (state: StateType, job: JobType, withTranscript: boolea
   summary.language = 'en';
   summary.billed_minutes = job.charged;
   if (usesCaptions(job)) {
-    summary.transcript_source = 'youtube_captions';
-    summary.caption_kind = 'auto_generated';
+    summary.transcript_source = captionSource(job.platform);
+    summary.caption_kind = job.platform === 'youtube' ? 'auto_generated' : null;
   }
 
   if (!withTranscript) {
