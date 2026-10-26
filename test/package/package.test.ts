@@ -111,7 +111,7 @@ before(async () => {
   tarballFiles = packed.files.map(file => file.path).sort();
   const manifest = {
     name: 'consumer',
-    version: '1.1.0',
+    version: '1.2.0',
     private: true,
     type: 'module',
   };
@@ -137,6 +137,20 @@ test('manifest links the repository and issue tracker', async () => {
     email: 'support@transcript1.com',
     url: 'https://github.com/transcript1-com/sdk/issues',
   });
+});
+
+test('manifest is version 1.2.0 and names every supported platform', async () => {
+  const manifest = JSON.parse(await readFile(join(root, 'package.json'), 'utf8')) as { version: string; description: string; keywords: string[] };
+  const platforms = ['YouTube', 'X', 'TikTok', 'Instagram', 'Facebook', 'Bluesky', 'Twitch', 'Dailymotion', 'Pinterest', 'LinkedIn', 'Snapchat'];
+
+  assert.equal(manifest.version, '1.2.0');
+  for (const platform of platforms) {
+    assert.ok(manifest.description.includes(platform), platform);
+  }
+
+  for (const keyword of ['transcription', 'speech-to-text', 'youtube-transcript', 'video-to-text', 'transcription-api', 'srt', 'vtt']) {
+    assert.ok(manifest.keywords.includes(keyword), keyword);
+  }
 });
 
 test('packs exactly one .js and one .d.ts for every source file', async () => {

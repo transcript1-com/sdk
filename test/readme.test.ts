@@ -14,7 +14,8 @@ test('states the runtimes without promising more than the tests cover', () => {
 test('names qualified platforms and links to their individual-media limits', () => {
   assert.ok(flat.includes('Use public video links from YouTube, X, TikTok, Instagram, Facebook, Bluesky, Twitch, Dailymotion, Pinterest, LinkedIn and Snapchat or upload audio and video files.'));
   assert.ok(flat.includes('Pinterest video pins, LinkedIn public video posts and Snapchat Spotlight.'));
-  assert.ok(flat.includes('use a release that includes the required platform.'));
+  assert.ok(flat.includes('SDK 1.1.0 and older reject Twitch, Dailymotion, Pinterest, LinkedIn and Snapchat links locally; use 1.2.0 or newer.'));
+  assert.ok(!flat.includes('use a release that includes the required platform.'));
   assert.ok(!flat.includes('Only YouTube links'));
 });
 

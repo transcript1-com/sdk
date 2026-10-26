@@ -53,7 +53,7 @@ LinkedIn public video posts and Snapchat Spotlight. No supplied account cookies,
 or collections. Pinterest selects its first native video block, not external embeds. See the exact accepted hosts and paths
 in [Sources and options](https://transcript1.com/docs/sources-and-options). URL time parameters do not trim media.
 Twitch, Pinterest and Snapchat use `auto` or `stt`, not `captions`. Keep returned `media_id` strings opaque, including Twitch clip and Spotlight IDs.
-Older SDK releases may reject new links locally; use a release that includes the required platform.
+SDK 1.1.0 and older reject Twitch, Dailymotion, Pinterest, LinkedIn and Snapchat links locally; use 1.2.0 or newer.
 Files can be up to 2,000,000,000 bytes, with extensions mp3, wav, m4a, flac, ogg, opus, mp4, mov, webm or mkv.
 
 ## Download

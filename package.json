@@ -1,10 +1,22 @@
 {
   "name": "@transcript1/sdk",
-  "version": "1.1.0",
-  "description": "TypeScript SDK for transcribing social media videos from YouTube, X, TikTok, Instagram, Facebook and Bluesky, plus audio/video files, with transcript1.",
+  "version": "1.2.0",
+  "description": "TypeScript SDK for transcribing videos from YouTube, X, TikTok, Instagram, Facebook, Bluesky, Twitch, Dailymotion, Pinterest, LinkedIn and Snapchat, plus audio/video files, with transcript1.",
   "keywords": [
+    "transcript1",
+    "transcription",
+    "transcription-api",
+    "speech-to-text",
+    "youtube-transcript",
+    "video-to-text",
+    "video-transcription",
     "social-media",
-    "video-transcription"
+    "subtitles",
+    "srt",
+    "vtt",
+    "tiktok",
+    "sdk",
+    "typescript"
   ],
   "license": "MIT",
   "type": "module",
