@@ -83,11 +83,17 @@ export const examples = async (buffer: Buffer, blob: Blob): Promise<void> => {
   const getOptions: GetOptions = {
     wait: true,
     includeWords: true,
+    translation: 'both',
     signal: AbortSignal.timeout(60_000),
     onProgress,
   };
   const finished = await t1.transcriptions.get(job.id, getOptions);
   await t1.transcriptions.get(job.id);
+  const translated = await t1.transcriptions.translate(job.id, 'de');
+  const translatedStatus: 'processing' | 'completed' | 'failed' = translated.status;
+  const translatedSrt: string = await t1.download(job.id, { format: 'srt', translation: 'only' });
+  await t1.transcribe(job.source.platform === 'upload' ? './a.m4a' : 'https://youtu.be/dQw4w9WgXcQ', { translateTo: 'pl' });
+  console.log(translatedStatus, translatedSrt, finished.translation?.language, finished.transcript?.segments[0]?.translation);
   if (finished.source.platform === 'upload') {
     const uploaded: string | null = finished.source.filename;
     console.log(uploaded);

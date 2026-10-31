@@ -7,12 +7,17 @@ import { waitFor } from './wait-for.js';
 
 type QueryType = {
   include?: string;
+  translation?: string;
 };
 
 const buildQuery = (options: GetOptions): QueryType => {
   const query: QueryType = {};
   if (options.includeWords) {
     query.include = 'words';
+  }
+
+  if (options.translation) {
+    query.translation = options.translation;
   }
 
   return query;

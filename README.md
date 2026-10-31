@@ -119,6 +119,7 @@ The constructor accepts `apiKey`, `baseUrl`, `fetch` and `maxRetries` (default 2
 | --- | --- |
 | `speakers` | label speakers |
 | `language` | `auto` (default) or an ISO 639-1 code |
+| `translateTo` | translate the transcript into this ISO 639-1 language (two lowercase letters) |
 | `source` | `auto`, `captions` or `stt`; links only |
 | `fresh` | links: skip reusing a result from the last 24 hours |
 | `filename` | required for Buffers, Blobs without a name and streams |
@@ -127,11 +128,27 @@ The constructor accepts `apiKey`, `baseUrl`, `fetch` and `maxRetries` (default 2
 | `onProgress` | progress callback |
 | `signal` | an `AbortSignal` |
 
-`download`: `format` (`text`, `srt`, `vtt`, `json`), `timestamps`, `signal`.
+`download`: `format` (`text`, `srt`, `vtt`, `json`), `timestamps`, `translation`, `signal`.
 
-`transcriptions.get`: `wait`, `includeWords`, `onProgress`, `signal`. Progress events are reported while waiting.
+`transcriptions.get`: `wait`, `includeWords`, `translation`, `onProgress`, `signal`. Progress events are reported while waiting.
+
+`translation` is `both` (API default), `only` or `none`: whether segments carry the translation next to the original text, only the translation, or no translation.
 
 Returned objects keep the API's field names (`snake_case`).
+
+## Translate
+
+```ts
+const job = await t1.transcribe('https://youtu.be/dQw4w9WgXcQ', { translateTo: 'pl' });
+console.log(job.translation); // { language: 'pl', status: 'completed' }
+console.log(job.transcript.segments[0].translation);
+
+// translate an already completed transcription later (idempotent)
+const { status } = await t1.transcriptions.translate(job.id, 'de');
+const german = await t1.download(job.id, { format: 'srt', translation: 'only' });
+```
+
+`translate` resolves to `{ transcription_id, language, status }`. It rejects with `not_found` (404), `transcript_not_ready` (409, the transcript is not completed yet) or `invalid_request` (422, bad language).
 
 ## Progress
 

@@ -1,6 +1,11 @@
 import { ERROR_CODES } from '../../src/codes.js';
 import type { Format } from '../../src/types.js';
-import { CONTENT_TYPES, render, serialize } from './serialize.js';
+import {
+  CONTENT_TYPES,
+  render,
+  serialize,
+  type TranslationModeType,
+} from './serialize.js';
 import {
   buildRetryHeaders,
   getCodeForStatus,
@@ -32,6 +37,14 @@ const failPoll = (context: ContextType): boolean => {
   return true;
 };
 
+const readMode = (value: string | null): TranslationModeType => {
+  if (value === 'only' || value === 'none') {
+    return value;
+  }
+
+  return 'both';
+};
+
 export const get: HandlerType = context => {
   const { state, res, query } = context;
   const job = findOwnedJob(context);
@@ -49,17 +62,18 @@ export const get: HandlerType = context => {
     return;
   }
 
+  const mode = readMode(query.get('translation'));
   advanceJob(state, job);
   if (format === 'json') {
-    sendJson(res, 200, serialize(state, job, true));
+    sendJson(res, 200, serialize(state, job, true, mode));
     return;
   }
 
   if (job.status === 'completed') {
-    const rendered = render(job, format, query.get('timestamps') === 'true');
+    const rendered = render(job, format, query.get('timestamps') === 'true', mode);
     send(res, 200, rendered, { 'Content-Type': CONTENT_TYPES[format] });
     return;
   }
 
-  sendJson(res, getJobStatusCode(job), serialize(state, job, true));
+  sendJson(res, getJobStatusCode(job), serialize(state, job, true, mode));
 };

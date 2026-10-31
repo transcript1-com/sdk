@@ -33,6 +33,7 @@ export type JobType = {
   source: 'auto' | 'captions' | 'stt';
   language: string;
   diarize: boolean;
+  translateTo?: string;
   idempotencyKey: string | undefined;
   params: string;
   token: string;

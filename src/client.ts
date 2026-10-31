@@ -6,6 +6,7 @@ import { create } from './transcriptions/create.js';
 import { remove } from './transcriptions/delete.js';
 import { get } from './transcriptions/get.js';
 import { list } from './transcriptions/list.js';
+import { translate } from './transcriptions/translate.js';
 import type { GetOptions, ListParams } from './transcriptions/types.js';
 import type {
   Account,
@@ -15,6 +16,7 @@ import type {
   Input,
   Transcription,
   TranscriptionSummary,
+  TranslateResult,
 } from './types.js';
 
 export type Transcriptions = {
@@ -22,6 +24,7 @@ export type Transcriptions = {
   get: (id: string, options?: GetOptions) => Promise<Transcription>;
   list: (params?: ListParams) => AsyncGenerator<TranscriptionSummary>;
   delete: (id: string, options?: { signal?: AbortSignal }) => Promise<void>;
+  translate: (id: string, language: string, options?: { signal?: AbortSignal }) => Promise<TranslateResult>;
 };
 
 const createTranscriptions = (config: ConfigType): Transcriptions => ({
@@ -29,6 +32,7 @@ const createTranscriptions = (config: ConfigType): Transcriptions => ({
   get: async (id, options) => get(config, id, options),
   list: params => list(config, params),
   delete: async (id, options) => remove(config, id, options?.signal),
+  translate: async (id, language, options) => translate(config, id, language, options?.signal),
 });
 
 export class Transcript1 {

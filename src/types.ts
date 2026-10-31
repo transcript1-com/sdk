@@ -25,6 +25,7 @@ export type Segment = {
   speaker: string | null;
   language: string | null;
   text: string;
+  translation?: string;
   words?: Word[] | null;
 };
 
@@ -61,6 +62,7 @@ export type TranscriptionOptions = {
   source: 'auto' | 'captions' | 'stt';
   language: string;
   diarize: boolean;
+  translate_to?: string;
 };
 
 export type JobError = {
@@ -81,6 +83,20 @@ export type UploadPlan = {
   chunks: Chunk[];
 };
 
+export type TranslationInfo = {
+  language: string;
+  status: 'processing' | 'completed' | 'failed';
+  error?: string;
+};
+
+export type TranslationMode = 'both' | 'only' | 'none';
+
+export type TranslateResult = {
+  transcription_id: string;
+  language: string;
+  status: TranslationInfo['status'];
+};
+
 export type Transcription = {
   id: string;
   object: 'transcription';
@@ -95,6 +111,7 @@ export type Transcription = {
   billed_minutes: number | null;
   cached: boolean;
   error: JobError | null;
+  translation?: TranslationInfo | null;
   created_at: string | null;
   completed_at: string | null;
   transcript?: Transcript;
@@ -137,12 +154,14 @@ export type TranscribeOptions = CreateOptions;
 export type DownloadOptions = {
   format?: Format;
   timestamps?: boolean;
+  translation?: TranslationMode;
   signal?: AbortSignal;
 };
 
 export type CreateOptions = {
   speakers?: boolean;
   language?: string;
+  translateTo?: string;
   source?: 'auto' | 'captions' | 'stt';
   fresh?: boolean;
   filename?: string;

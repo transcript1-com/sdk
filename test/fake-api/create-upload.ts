@@ -81,7 +81,7 @@ export const createUpload = (context: ContextType, key: string | undefined, body
     return;
   }
 
-  const params = JSON.stringify(['upload', filename, size, upload.mime_type, body.source, body.language, body.diarize]);
+  const params = JSON.stringify(['upload', filename, size, upload.mime_type, body.source, body.language, body.diarize, body.translateTo]);
   if (replay(state, res, key, params)) {
     return;
   }
@@ -105,6 +105,7 @@ export const createUpload = (context: ContextType, key: string | undefined, body
     source: body.source,
     language: body.language,
     diarize: body.diarize,
+    translateTo: body.translateTo,
     idempotencyKey: key,
     params,
     token: '',

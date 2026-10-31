@@ -13,6 +13,7 @@ export type CreateBodyType = {
   source: string;
   language: string;
   diarize: boolean;
+  translateTo?: string;
   upload?: Record<string, unknown> | undefined;
 };
 

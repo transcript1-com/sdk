@@ -17,6 +17,10 @@ const buildUploadBody = (file: FileInputType, options: CreateOptions): CreateBod
     body.diarize = true;
   }
 
+  if (options.translateTo) {
+    body.translate_to = options.translateTo;
+  }
+
   return body;
 };
 

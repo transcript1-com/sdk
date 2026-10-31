@@ -11,6 +11,7 @@ type LinkBodyType = {
   source?: CreateOptions['source'];
   language?: string;
   diarize?: true;
+  translate_to?: string;
 };
 
 type LinkOptionsType = CreateOptions & { idempotencyKey: string };
@@ -32,6 +33,10 @@ const buildLinkBody = (link: LinkInputType, options: CreateOptions): LinkBodyTyp
 
   if (options.speakers) {
     body.diarize = true;
+  }
+
+  if (options.translateTo) {
+    body.translate_to = options.translateTo;
   }
 
   return body;

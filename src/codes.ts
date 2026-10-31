@@ -10,6 +10,7 @@ export const REQUEST_ERROR_CODES = [
   'no_active_plan',
   'not_found',
   'upload_incomplete',
+  'transcript_not_ready',
   'invalid_state',
   'idempotency_conflict',
   'media_too_large',

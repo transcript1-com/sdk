@@ -7,6 +7,7 @@ export type CreateBodyType = {
   upload: { filename: string; size: number; mime_type: string };
   language?: string;
   diarize?: boolean;
+  translate_to?: string;
 };
 
 export type UploadOptionsType = {

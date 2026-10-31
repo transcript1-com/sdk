@@ -15,6 +15,7 @@ import {
 } from './http.js';
 import { list } from './list.js';
 import { getUploadedBytes, recordRequest } from './log.js';
+import { translations } from './translations.js';
 import {
   createState,
   type KnobsType,
@@ -65,6 +66,12 @@ const ROUTES: RouteType[] = [
     method: 'DELETE',
     pattern: /^\/v1\/transcriptions\/(?<id>[^/]+)$/,
     handler: remove,
+    bearer: true,
+  },
+  {
+    method: 'POST',
+    pattern: /^\/v1\/transcriptions\/(?<id>[^/]+)\/translations$/,
+    handler: translations,
     bearer: true,
   },
   {

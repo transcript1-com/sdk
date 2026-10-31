@@ -83,6 +83,7 @@ test('lists every request error code of the API', () => {
     'rate_limited',
     'service_unavailable',
     'too_many_active_jobs',
+    'transcript_not_ready',
     'unauthorized',
     'unsupported_media',
     'unsupported_platform',

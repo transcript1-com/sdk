@@ -25,7 +25,9 @@ const SEGMENTS = [
   },
 ];
 
-const buildSegments = (job: JobType): Segment[] => {
+export type TranslationModeType = 'both' | 'only' | 'none';
+
+const buildSegments = (job: JobType, mode: TranslationModeType = 'none'): Segment[] => {
   const segments: Segment[] = [];
   for (const segment of SEGMENTS) {
     const built: Segment = {
@@ -41,14 +43,21 @@ const buildSegments = (job: JobType): Segment[] => {
       built.words = null;
     }
 
+    if (job.translateTo && job.status === 'completed' && mode !== 'none') {
+      built.translation = `[${job.translateTo}] ${segment.text}`;
+      if (mode === 'only') {
+        built.text = built.translation;
+      }
+    }
+
     segments.push(built);
   }
 
   return segments;
 };
 
-export const buildTranscript = (job: JobType): Transcript => {
-  const segments = buildSegments(job);
+export const buildTranscript = (job: JobType, mode: TranslationModeType = 'none'): Transcript => {
+  const segments = buildSegments(job, mode);
   let speakers: string[] = [];
   if (job.diarize) {
     speakers = SEGMENTS.map(segment => segment.speaker);
@@ -101,7 +110,7 @@ const usesCaptions = (job: JobType): boolean => {
   return !job.diarize;
 };
 
-export const serialize = (state: StateType, job: JobType, withTranscript: boolean): Transcription | TranscriptionSummary => {
+export const serialize = (state: StateType, job: JobType, withTranscript: boolean, mode: TranslationModeType = 'both'): Transcription | TranscriptionSummary => {
   const summary: TranscriptionSummary = {
     id: job.id,
     object: 'transcription',
@@ -112,6 +121,7 @@ export const serialize = (state: StateType, job: JobType, withTranscript: boolea
       source: job.source,
       language: job.language,
       diarize: job.diarize,
+      ...job.translateTo ? { translate_to: job.translateTo } : {},
     },
     transcript_source: null,
     caption_kind: null,
@@ -122,6 +132,10 @@ export const serialize = (state: StateType, job: JobType, withTranscript: boolea
     created_at: job.createdAt.toISOString(),
     completed_at: job.completedAt?.toISOString() ?? null,
   };
+  if (job.translateTo) {
+    summary.translation = { language: job.translateTo, status: job.status === 'completed' ? 'completed' : 'processing' };
+  }
+
   if (job.status !== 'completed') {
     return summary;
   }
@@ -138,7 +152,7 @@ export const serialize = (state: StateType, job: JobType, withTranscript: boolea
     return summary;
   }
 
-  return { ...summary, transcript: buildTranscript(job) };
+  return { ...summary, transcript: buildTranscript(job, mode) };
 };
 
 const formatClock = (seconds: number): string => {
@@ -197,8 +211,8 @@ export const CONTENT_TYPES: Record<RenderFormatType, string> = {
   vtt: 'text/vtt; charset=utf-8',
 };
 
-export const render = (job: JobType, format: RenderFormatType, timestamps: boolean): string => {
-  const segments = buildSegments(job);
+export const render = (job: JobType, format: RenderFormatType, timestamps: boolean, mode: TranslationModeType = 'none'): string => {
+  const segments = buildSegments(job, mode);
   if (format === 'srt') {
     return segments.map((segment, index) => buildSrtCue(segment, index)).join('\n');
   }

@@ -10,6 +10,7 @@ import { withJobId } from './uploads/with-job-id.js';
 type QueryType = {
   format?: Format;
   timestamps?: boolean;
+  translation?: string;
 };
 
 const validateFormat = (options: DownloadOptions): Format => {
@@ -38,6 +39,10 @@ const buildQuery = (format: Format, options: DownloadOptions): QueryType => {
 
   if (options.timestamps) {
     query.timestamps = true;
+  }
+
+  if (options.translation) {
+    query.translation = options.translation;
   }
 
   return query;

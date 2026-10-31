@@ -1,8 +1,14 @@
 import type { LinkPlatformType } from '../inputs/types.js';
-import type { ProgressEvent, Status, Transcription } from '../types.js';
+import type {
+  ProgressEvent,
+  Status,
+  Transcription,
+  TranslationMode,
+} from '../types.js';
 
 export type WaitOptionsType = {
   includeWords?: boolean;
+  translation?: TranslationMode;
   signal?: AbortSignal;
   onProgress?: (event: ProgressEvent) => void;
   transcription?: Transcription;

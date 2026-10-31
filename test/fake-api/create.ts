@@ -39,6 +39,7 @@ export const create: HandlerType = async context => {
     source: readString(raw.source, 'auto'),
     language: readString(raw.language, 'auto'),
     diarize: raw.diarize === true,
+    translateTo: typeof raw.translate_to === 'string' ? raw.translate_to : undefined,
     upload: readUpload(raw.upload),
   };
   const key = req.headers['idempotency-key'];

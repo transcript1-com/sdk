@@ -16,6 +16,7 @@ const MAX_BACKOFF_MS = 30_000;
 type QueryType = {
   wait: number;
   include?: string;
+  translation?: string;
 };
 
 export const isTerminal = (transcription: Transcription | undefined): transcription is Transcription => {
@@ -52,6 +53,10 @@ const buildPollQuery = (options: WaitOptionsType): QueryType => {
   const query: QueryType = { wait: WAIT_SECONDS };
   if (options.includeWords) {
     query.include = 'words';
+  }
+
+  if (options.translation) {
+    query.translation = options.translation;
   }
 
   return query;

@@ -19,6 +19,12 @@ test('names qualified platforms and links to their individual-media limits', () 
   assert.ok(!flat.includes('Only YouTube links'));
 });
 
+test('documents translation', () => {
+  for (const fact of ['translateTo', '`translation`', 'transcriptions.translate', 'transcript_not_ready']) {
+    assert.ok(flat.includes(fact), fact);
+  }
+});
+
 test('links to the pricing page instead of listing prices', () => {
   assert.ok(flat.includes('https://transcript1.com/#pricing'));
   assert.ok(!flat.includes('$9'));
