@@ -5,6 +5,7 @@ import { request } from '../http/request.js';
 import { isTransient } from '../transient.js';
 import type { Status, Transcription } from '../types.js';
 import { withJobId } from '../uploads/with-job-id.js';
+import { buildTranslationQuery, type TranslationQueryType } from './translation-query.js';
 import { transcriptionPath } from './path.js';
 import type { WaitOptionsType } from './types.js';
 
@@ -13,10 +14,9 @@ const MIN_POLL_GAP_MS = 2000;
 const FIRST_BACKOFF_MS = 2000;
 const MAX_BACKOFF_MS = 30_000;
 
-type QueryType = {
+type QueryType = TranslationQueryType & {
   wait: number;
   include?: string;
-  translation?: string;
 };
 
 export const isTerminal = (transcription: Transcription | undefined): transcription is Transcription => {
@@ -50,13 +50,9 @@ const waitForPollGap = async (config: ConfigType, askedAt: number | undefined, s
 };
 
 const buildPollQuery = (options: WaitOptionsType): QueryType => {
-  const query: QueryType = { wait: WAIT_SECONDS };
+  const query: QueryType = { wait: WAIT_SECONDS, ...buildTranslationQuery(options.translation) };
   if (options.includeWords) {
     query.include = 'words';
-  }
-
-  if (options.translation) {
-    query.translation = options.translation;
   }
 
   return query;

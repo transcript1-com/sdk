@@ -1,23 +1,19 @@
 import type { ConfigType } from '../config.js';
 import { request } from '../http/request.js';
 import type { Transcription } from '../types.js';
+import { buildTranslationQuery, type TranslationQueryType } from './translation-query.js';
 import { transcriptionPath } from './path.js';
 import type { GetOptions } from './types.js';
 import { waitFor } from './wait-for.js';
 
-type QueryType = {
+type QueryType = TranslationQueryType & {
   include?: string;
-  translation?: string;
 };
 
 const buildQuery = (options: GetOptions): QueryType => {
-  const query: QueryType = {};
+  const query: QueryType = buildTranslationQuery(options.translation);
   if (options.includeWords) {
     query.include = 'words';
-  }
-
-  if (options.translation) {
-    query.translation = options.translation;
   }
 
   return query;

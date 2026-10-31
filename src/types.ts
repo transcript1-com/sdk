@@ -89,7 +89,10 @@ export type TranslationInfo = {
   error?: string;
 };
 
-export type TranslationMode = 'both' | 'only' | 'none';
+export type TranslationOption = {
+  mode: 'only' | 'both';
+  language: string;
+};
 
 export type TranslateResult = {
   transcription_id: string;
@@ -112,6 +115,7 @@ export type Transcription = {
   cached: boolean;
   error: JobError | null;
   translation?: TranslationInfo | null;
+  translations?: TranslationInfo[];
   created_at: string | null;
   completed_at: string | null;
   transcript?: Transcript;
@@ -154,7 +158,7 @@ export type TranscribeOptions = CreateOptions;
 export type DownloadOptions = {
   format?: Format;
   timestamps?: boolean;
-  translation?: TranslationMode;
+  translation?: TranslationOption;
   signal?: AbortSignal;
 };
 

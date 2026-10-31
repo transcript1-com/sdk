@@ -20,7 +20,7 @@ test('names qualified platforms and links to their individual-media limits', () 
 });
 
 test('documents translation', () => {
-  for (const fact of ['translateTo', '`translation`', 'transcriptions.translate', 'transcript_not_ready']) {
+  for (const fact of ['translateTo', '`translation`', 'transcriptions.translate', 'transcript_not_ready', 'translation_not_found', 'translations']) {
     assert.ok(flat.includes(fact), fact);
   }
 });

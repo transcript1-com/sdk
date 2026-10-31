@@ -2,15 +2,15 @@ import { ensureCompleted } from './ensure-completed.js';
 import type { ConfigType } from './config.js';
 import { request } from './http/request.js';
 import { buildInvalidInputError } from './inputs/invalid-input.js';
+import { buildTranslationQuery, type TranslationQueryType } from './transcriptions/translation-query.js';
 import { transcriptionPath } from './transcriptions/path.js';
 import { waitFor } from './transcriptions/wait-for.js';
 import type { DownloadOptions, Format } from './types.js';
 import { withJobId } from './uploads/with-job-id.js';
 
-type QueryType = {
+type QueryType = TranslationQueryType & {
   format?: Format;
   timestamps?: boolean;
-  translation?: string;
 };
 
 const validateFormat = (options: DownloadOptions): Format => {
@@ -32,17 +32,13 @@ const validateFormat = (options: DownloadOptions): Format => {
 };
 
 const buildQuery = (format: Format, options: DownloadOptions): QueryType => {
-  const query: QueryType = {};
+  const query: QueryType = buildTranslationQuery(options.translation);
   if (format !== 'json') {
     query.format = format;
   }
 
   if (options.timestamps) {
     query.timestamps = true;
-  }
-
-  if (options.translation) {
-    query.translation = options.translation;
   }
 
   return query;

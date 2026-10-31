@@ -36,37 +36,62 @@ test('sends translate_to for upload creates', async t => {
   assert.equal((parseBody(findCreates(fake)[0]) as Record<string, unknown>).translate_to, 'de');
 });
 
-test('get sends translation only when set and returns translated segments', async t => {
+test('get sends translation=none by default and mode plus language when set', async t => {
   const fake = await startApi(t);
   const { config } = createApiConfig(fake);
   const job = await create(config, LINK, { translateTo: 'pl' });
   await get(config, job.id);
-  const only = await get(config, job.id, { translation: 'only' });
+  const only = await get(config, job.id, { translation: { mode: 'only', language: 'pl' } });
   const polls = findPolls(fake);
 
-  assert.equal(polls[0]?.query.has('translation'), false);
+  assert.equal(polls[0]?.query.get('translation'), 'none');
+  assert.equal(polls[0]?.query.has('translation_language'), false);
   assert.equal(polls[1]?.query.get('translation'), 'only');
+  assert.equal(polls[1]?.query.get('translation_language'), 'pl');
   assert.deepEqual(only.translation, { language: 'pl', status: 'completed' });
+  assert.deepEqual(only.translations, [{ language: 'pl', status: 'completed' }]);
   assert.equal(only.transcript?.segments[0]?.translation, '[pl] Welcome to the show.');
   assert.equal(only.options.translate_to, 'pl');
 });
 
-test('get with wait forwards translation', async t => {
+test('get selects among several languages and rejects an unknown one', async t => {
   const fake = await startApi(t);
-  const { config } = createApiConfig(fake, { sleep: async () => undefined });
-  const job = await create(config, LINK);
-  await get(config, job.id, { wait: true, translation: 'none' });
+  const { config } = createApiConfig(fake);
+  const job = await create(config, LINK, { translateTo: 'pl' });
+  await get(config, job.id);
+  await translate(config, job.id, 'de');
+  const german = await get(config, job.id, { translation: { mode: 'both', language: 'de' } });
 
-  assert.equal(findPolls(fake).at(-1)?.query.get('translation'), 'none');
+  assert.deepEqual(german.translations?.map(item => item.language), ['pl', 'de']);
+  assert.equal(german.translation?.language, 'de');
+  assert.equal(german.transcript?.segments[0]?.translation, '[de] Welcome to the show.');
+  const error = await expectRejection(get(config, job.id, { translation: { mode: 'both', language: 'fr' } }));
+  assert.equal(error.code, 'translation_not_found');
+  assert.equal(error.status, 404);
 });
 
-test('download forwards translation', async t => {
+test('get with wait forwards translation and defaults to none', async t => {
   const fake = await startApi(t);
   const { config } = createApiConfig(fake, { sleep: async () => undefined });
   const job = await create(config, LINK);
-  await download(config, job.id, { format: 'srt', translation: 'only' });
+  await get(config, job.id, { wait: true });
+  assert.equal(findPolls(fake).at(-1)?.query.get('translation'), 'none');
+  await get(config, job.id, { wait: true, translation: { mode: 'both', language: 'pl' } }).catch(() => undefined);
+
+  assert.equal(findPolls(fake).at(-1)?.query.get('translation'), 'both');
+  assert.equal(findPolls(fake).at(-1)?.query.get('translation_language'), 'pl');
+});
+
+test('download sends none by default and forwards translation', async t => {
+  const fake = await startApi(t);
+  const { config } = createApiConfig(fake, { sleep: async () => undefined });
+  const job = await create(config, LINK, { translateTo: 'pl' });
+  await download(config, job.id, { format: 'srt' });
+  assert.equal(fake.requests.at(-1)?.query.get('translation'), 'none');
+  await download(config, job.id, { format: 'srt', translation: { mode: 'only', language: 'pl' } });
 
   assert.equal(fake.requests.at(-1)?.query.get('translation'), 'only');
+  assert.equal(fake.requests.at(-1)?.query.get('translation_language'), 'pl');
 });
 
 test('translate posts the language and returns the API answer', async t => {

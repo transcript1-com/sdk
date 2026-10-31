@@ -27,7 +27,21 @@ const SEGMENTS = [
 
 export type TranslationModeType = 'both' | 'only' | 'none';
 
-const buildSegments = (job: JobType, mode: TranslationModeType = 'none'): Segment[] => {
+export const listTranslations = (job: JobType): string[] => {
+  const languages = [job.translateTo, ...job.translated ?? []].filter(Boolean) as string[];
+
+  return [...new Set(languages)];
+};
+
+export const selectLanguage = (job: JobType, requested: string | null): string | undefined => {
+  if (requested) {
+    return requested;
+  }
+
+  return job.translateTo ?? listTranslations(job).at(-1);
+};
+
+const buildSegments = (job: JobType, mode: TranslationModeType = 'none', language?: string): Segment[] => {
   const segments: Segment[] = [];
   for (const segment of SEGMENTS) {
     const built: Segment = {
@@ -43,8 +57,8 @@ const buildSegments = (job: JobType, mode: TranslationModeType = 'none'): Segmen
       built.words = null;
     }
 
-    if (job.translateTo && job.status === 'completed' && mode !== 'none') {
-      built.translation = `[${job.translateTo}] ${segment.text}`;
+    if (language && job.status === 'completed' && mode !== 'none') {
+      built.translation = `[${language}] ${segment.text}`;
       if (mode === 'only') {
         built.text = built.translation;
       }
@@ -56,8 +70,8 @@ const buildSegments = (job: JobType, mode: TranslationModeType = 'none'): Segmen
   return segments;
 };
 
-export const buildTranscript = (job: JobType, mode: TranslationModeType = 'none'): Transcript => {
-  const segments = buildSegments(job, mode);
+export const buildTranscript = (job: JobType, mode: TranslationModeType = 'none', language?: string): Transcript => {
+  const segments = buildSegments(job, mode, language);
   let speakers: string[] = [];
   if (job.diarize) {
     speakers = SEGMENTS.map(segment => segment.speaker);
@@ -110,7 +124,7 @@ const usesCaptions = (job: JobType): boolean => {
   return !job.diarize;
 };
 
-export const serialize = (state: StateType, job: JobType, withTranscript: boolean, mode: TranslationModeType = 'both'): Transcription | TranscriptionSummary => {
+export const serialize = (state: StateType, job: JobType, withTranscript: boolean, mode: TranslationModeType = 'both', requested: string | null = null): Transcription | TranscriptionSummary => {
   const summary: TranscriptionSummary = {
     id: job.id,
     object: 'transcription',
@@ -132,9 +146,13 @@ export const serialize = (state: StateType, job: JobType, withTranscript: boolea
     created_at: job.createdAt.toISOString(),
     completed_at: job.completedAt?.toISOString() ?? null,
   };
-  if (job.translateTo) {
-    summary.translation = { language: job.translateTo, status: job.status === 'completed' ? 'completed' : 'processing' };
+  const language = selectLanguage(job, requested);
+  const status = job.status === 'completed' ? 'completed' : 'processing';
+  if (language) {
+    summary.translation = { language, status };
   }
+
+  summary.translations = listTranslations(job).map(item => ({ language: item, status }));
 
   if (job.status !== 'completed') {
     return summary;
@@ -152,7 +170,7 @@ export const serialize = (state: StateType, job: JobType, withTranscript: boolea
     return summary;
   }
 
-  return { ...summary, transcript: buildTranscript(job, mode) };
+  return { ...summary, transcript: buildTranscript(job, mode, language) };
 };
 
 const formatClock = (seconds: number): string => {
@@ -211,8 +229,8 @@ export const CONTENT_TYPES: Record<RenderFormatType, string> = {
   vtt: 'text/vtt; charset=utf-8',
 };
 
-export const render = (job: JobType, format: RenderFormatType, timestamps: boolean, mode: TranslationModeType = 'none'): string => {
-  const segments = buildSegments(job, mode);
+export const render = (job: JobType, format: RenderFormatType, timestamps: boolean, mode: TranslationModeType = 'none', language?: string): string => {
+  const segments = buildSegments(job, mode, language);
   if (format === 'srt') {
     return segments.map((segment, index) => buildSrtCue(segment, index)).join('\n');
   }

@@ -27,6 +27,6 @@ export const translations: HandlerType = async context => {
     return;
   }
 
-  job.translateTo = language;
+  job.translated = [...job.translated ?? [], language];
   sendJson(res, 200, { transcription_id: job.id, language, status: 'completed' });
 };

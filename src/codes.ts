@@ -11,6 +11,7 @@ export const REQUEST_ERROR_CODES = [
   'not_found',
   'upload_incomplete',
   'transcript_not_ready',
+  'translation_not_found',
   'invalid_state',
   'idempotency_conflict',
   'media_too_large',

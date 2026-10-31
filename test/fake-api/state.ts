@@ -34,6 +34,7 @@ export type JobType = {
   language: string;
   diarize: boolean;
   translateTo?: string;
+  translated?: string[];
   idempotencyKey: string | undefined;
   params: string;
   token: string;

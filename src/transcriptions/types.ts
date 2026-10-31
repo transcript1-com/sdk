@@ -3,12 +3,12 @@ import type {
   ProgressEvent,
   Status,
   Transcription,
-  TranslationMode,
+  TranslationOption,
 } from '../types.js';
 
 export type WaitOptionsType = {
   includeWords?: boolean;
-  translation?: TranslationMode;
+  translation?: TranslationOption;
   signal?: AbortSignal;
   onProgress?: (event: ProgressEvent) => void;
   transcription?: Transcription;

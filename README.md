@@ -132,7 +132,7 @@ The constructor accepts `apiKey`, `baseUrl`, `fetch` and `maxRetries` (default 2
 
 `transcriptions.get`: `wait`, `includeWords`, `translation`, `onProgress`, `signal`. Progress events are reported while waiting.
 
-`translation` is `both` (API default), `only` or `none`: whether segments carry the translation next to the original text, only the translation, or no translation.
+`translation` is `{ mode: 'only' | 'both', language: 'de' }`: segments carry the translation in that language next to the original text (`both`) or instead of it (`only`). Omit it to get the original text only (the SDK sends `translation=none`). A language the transcription has no translation for rejects with `translation_not_found` (404); a malformed language is `invalid_request` (422). `Transcription.translations` lists every translation (`{ language, status }`), oldest first.
 
 Returned objects keep the API's field names (`snake_case`).
 
@@ -145,7 +145,7 @@ console.log(job.transcript.segments[0].translation);
 
 // translate an already completed transcription later (idempotent)
 const { status } = await t1.transcriptions.translate(job.id, 'de');
-const german = await t1.download(job.id, { format: 'srt', translation: 'only' });
+const german = await t1.download(job.id, { format: 'srt', translation: { mode: 'only', language: 'de' } });
 ```
 
 `translate` resolves to `{ transcription_id, language, status }`. It rejects with `not_found` (404), `transcript_not_ready` (409, the transcript is not completed yet) or `invalid_request` (422, bad language).

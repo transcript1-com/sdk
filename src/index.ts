@@ -33,7 +33,7 @@ export type {
   TranscriptionSummary,
   TranslateResult,
   TranslationInfo,
-  TranslationMode,
+  TranslationOption,
   UploadPlan,
   UploadSource,
   Word,

@@ -2,7 +2,9 @@ import { ERROR_CODES } from '../../src/codes.js';
 import type { Format } from '../../src/types.js';
 import {
   CONTENT_TYPES,
+  listTranslations,
   render,
+  selectLanguage,
   serialize,
   type TranslationModeType,
 } from './serialize.js';
@@ -63,17 +65,29 @@ export const get: HandlerType = context => {
   }
 
   const mode = readMode(query.get('translation'));
+  const requested = query.get('translation_language');
+  if (requested !== null && !/^[a-z]{2}$/.test(requested)) {
+    sendError(res, 422, ERROR_CODES.invalid_request, 'translation_language must be an ISO 639-1 code');
+    return;
+  }
+
+  if (requested !== null && !listTranslations(job).includes(requested)) {
+    sendError(res, 404, ERROR_CODES.translation_not_found, `No translation in ${requested}`);
+    return;
+  }
+
+  const language = selectLanguage(job, requested);
   advanceJob(state, job);
   if (format === 'json') {
-    sendJson(res, 200, serialize(state, job, true, mode));
+    sendJson(res, 200, serialize(state, job, true, mode, requested));
     return;
   }
 
   if (job.status === 'completed') {
-    const rendered = render(job, format, query.get('timestamps') === 'true', mode);
+    const rendered = render(job, format, query.get('timestamps') === 'true', mode, language);
     send(res, 200, rendered, { 'Content-Type': CONTENT_TYPES[format] });
     return;
   }
 
-  sendJson(res, getJobStatusCode(job), serialize(state, job, true, mode));
+  sendJson(res, getJobStatusCode(job), serialize(state, job, true, mode, requested));
 };
