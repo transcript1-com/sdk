@@ -1,6 +1,6 @@
 {
   "name": "@transcript1/sdk",
-  "version": "1.3.0",
+  "version": "1.4.0",
   "description": "TypeScript SDK for transcribing videos from YouTube, X, TikTok, Instagram, Facebook, Bluesky, Twitch, Dailymotion, Pinterest, LinkedIn and Snapchat, plus audio/video files, with transcript1.",
   "keywords": [
     "transcript1",
