@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { Transcript1 } from '../../src/client.js';
+import { transcribe } from '../../src/transcribe.js';
 import { download } from '../../src/download.js';
 import { create } from '../../src/transcriptions/create.js';
 import { get } from '../../src/transcriptions/get.js';
@@ -73,13 +74,23 @@ test('get selects among several languages and rejects an unknown one', async t =
 test('get with wait forwards translation and defaults to none', async t => {
   const fake = await startApi(t);
   const { config } = createApiConfig(fake, { sleep: async () => undefined });
-  const job = await create(config, LINK);
+  const job = await create(config, LINK, { translateTo: 'pl' });
   await get(config, job.id, { wait: true });
   assert.equal(findPolls(fake).at(-1)?.query.get('translation'), 'none');
-  await get(config, job.id, { wait: true, translation: { mode: 'both', language: 'pl' } }).catch(() => undefined);
+  await get(config, job.id, { wait: true, translation: { mode: 'both', language: 'pl' } });
 
   assert.equal(findPolls(fake).at(-1)?.query.get('translation'), 'both');
   assert.equal(findPolls(fake).at(-1)?.query.get('translation_language'), 'pl');
+});
+
+test('transcribe with translateTo waits for and returns the translation', async t => {
+  const fake = await startApi(t);
+  const { config } = createApiConfig(fake);
+  const done = await transcribe(config, LINK, { translateTo: 'pl' });
+
+  assert.equal(findPolls(fake).at(-1)?.query.get('translation'), 'both');
+  assert.equal(findPolls(fake).at(-1)?.query.get('translation_language'), 'pl');
+  assert.equal(done.transcript.segments[0]?.translation, '[pl] Welcome to the show.');
 });
 
 test('download sends none by default and forwards translation', async t => {

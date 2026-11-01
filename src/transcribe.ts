@@ -10,6 +10,7 @@ import type {
   CreateOptions,
   Input,
   Transcription,
+  TranslationOption,
 } from './types.js';
 import { withJobId } from './uploads/with-job-id.js';
 
@@ -21,21 +22,21 @@ const hasTranscript = (job: Transcription): job is CompletedTranscription => {
   return job.transcript !== undefined;
 };
 
-const getJob = async (config: ConfigType, id: string, signal?: AbortSignal): Promise<Transcription> => {
+const getJob = async (config: ConfigType, id: string, signal?: AbortSignal, translation?: TranslationOption): Promise<Transcription> => {
   try {
-    return await get(config, id, { signal });
+    return await get(config, id, { signal, translation });
   } catch (error: unknown) {
     throw withJobId(error, id);
   }
 };
 
 // a reused job can come back without its transcript
-const findTranscript = async (config: ConfigType, job: Transcription, signal?: AbortSignal): Promise<CompletedTranscription> => {
+const findTranscript = async (config: ConfigType, job: Transcription, signal?: AbortSignal, translation?: TranslationOption): Promise<CompletedTranscription> => {
   if (hasTranscript(job)) {
     return job;
   }
 
-  const fetched = await getJob(config, job.id, signal);
+  const fetched = await getJob(config, job.id, signal, translation);
   if (!hasTranscript(fetched)) {
     throw new Transcript1Error(ERROR_CODES.internal_error, 'The API returned a completed transcription without a transcript', {
       transcriptionId: job.id,
@@ -48,11 +49,15 @@ const findTranscript = async (config: ConfigType, job: Transcription, signal?: A
 
 export const transcribe = async (config: ConfigType, input: Input, options: CreateOptions = {}): Promise<CompletedTranscription> => {
   const created = await create(config, input, options);
+  const translation: TranslationOption | undefined = options.translateTo
+    ? { mode: 'both', language: options.translateTo }
+    : undefined;
   const finished = await waitFor(config, created.id, {
     transcription: created,
+    translation,
     onProgress: options.onProgress,
     signal: options.signal,
   });
 
-  return findTranscript(config, ensureCompleted(finished), options.signal);
+  return findTranscript(config, ensureCompleted(finished), options.signal, translation);
 };
