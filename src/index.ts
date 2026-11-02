@@ -11,6 +11,21 @@ export type {
   RequestErrorCode,
 } from './codes.js';
 export type { ClientOptions } from './config.js';
+export type {
+  Live,
+  LiveCapabilities,
+  LiveEndReason,
+  LiveEndResult,
+  LiveEvents,
+  LiveLine,
+  LiveSession,
+  LiveSessionInfo,
+  LiveSessionOptions,
+  LiveStartOptions,
+  LiveStatus,
+  LiveTranslation,
+  LiveTranslationPair,
+} from './live/types.js';
 export type { LinkPlatformType } from './inputs/types.js';
 export type {
   Account,
@@ -22,6 +37,7 @@ export type {
   Input,
   JobError,
   LinkSource,
+  LiveSource,
   Media,
   ProgressEvent,
   Segment,

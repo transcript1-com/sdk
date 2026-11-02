@@ -1,6 +1,8 @@
 import { getAccount } from './account.js';
 import { resolveConfig, type ClientOptions, type ConfigType } from './config.js';
 import { download } from './download.js';
+import { createLive } from './live/client.js';
+import type { Live } from './live/types.js';
 import { transcribe } from './transcribe.js';
 import { create } from './transcriptions/create.js';
 import { remove } from './transcriptions/delete.js';
@@ -37,11 +39,13 @@ const createTranscriptions = (config: ConfigType): Transcriptions => ({
 
 export class Transcript1 {
   readonly transcriptions: Transcriptions;
+  readonly live: Live;
   readonly #config: ConfigType;
 
   constructor(options: ClientOptions = {}) {
     this.#config = resolveConfig(options);
     this.transcriptions = createTranscriptions(this.#config);
+    this.live = createLive(this.#config);
   }
 
   // arrow properties so destructured methods still work

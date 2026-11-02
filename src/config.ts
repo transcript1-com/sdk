@@ -10,6 +10,7 @@ export type ClientOptions = {
   baseUrl?: string;
   fetch?: typeof fetch;
   maxRetries?: number;
+  WebSocket?: typeof WebSocket;
 };
 
 export type ConfigType = {
@@ -17,6 +18,7 @@ export type ConfigType = {
   baseUrl: string;
   fetch: typeof fetch;
   maxRetries: number;
+  WebSocket: typeof WebSocket | undefined;
   sleep: (ms: number, signal?: AbortSignal) => Promise<void>;
   random: () => number;
 };
@@ -91,6 +93,7 @@ export const resolveConfig = (options: ClientOptions = {}, internals: ConfigInte
     baseUrl: baseUrl.replace(/\/+$/, ''),
     fetch: options.fetch ?? globalThis.fetch.bind(globalThis),
     maxRetries: resolveMaxRetries(options.maxRetries),
+    WebSocket: options.WebSocket,
     sleep: internals.sleep ?? sleep,
     random: internals.random ?? Math.random,
   };

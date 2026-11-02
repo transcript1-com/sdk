@@ -77,17 +77,22 @@ test('lists every request error code of the API', () => {
     'invalid_request',
     'invalid_state',
     'invalid_url',
+    'live_capacity',
+    'live_unavailable',
     'media_too_large',
     'no_active_plan',
     'not_found',
     'rate_limited',
     'service_unavailable',
+    'session_ended',
     'too_many_active_jobs',
+    'too_many_live_sessions',
     'transcript_not_ready',
     'translation_not_found',
     'unauthorized',
     'unsupported_media',
     'unsupported_platform',
+    'unsupported_translation',
     'upload_incomplete',
   ]);
 });
@@ -115,6 +120,7 @@ test('lists every job failure code and the local codes', () => {
     'missing_api_key',
     'network_error',
     'upload_token_refused',
+    'websocket_unavailable',
   ]);
 });
 

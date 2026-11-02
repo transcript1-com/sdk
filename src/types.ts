@@ -7,7 +7,8 @@ export type Status =
   | 'transcribing'
   | 'completed'
   | 'failed'
-  | 'canceled';
+  | 'canceled'
+  | 'live';
 
 export type Format = 'text' | 'srt' | 'vtt' | 'json';
 
@@ -45,6 +46,11 @@ export type UploadSource = {
   platform: 'upload';
   filename: string | null;
   size: number | null;
+};
+
+export type LiveSource = {
+  platform: 'live';
+  session_id: string;
 };
 
 export type Media = {
@@ -104,11 +110,11 @@ export type Transcription = {
   id: string;
   object: 'transcription';
   status: Status;
-  source: LinkSource | UploadSource;
+  source: LinkSource | UploadSource | LiveSource;
   media: Media | null;
   options: TranscriptionOptions;
   transcript_source: 'youtube_captions' | 'x_captions' | 'tiktok_captions' | 'bluesky_captions'
-  | 'dailymotion_captions' | 'linkedin_captions' | 'speech_to_text' | null;
+  | 'dailymotion_captions' | 'linkedin_captions' | 'speech_to_text' | 'live' | null;
   caption_kind: 'manual' | 'auto_generated' | null;
   language: string | null;
   billed_minutes: number | null;

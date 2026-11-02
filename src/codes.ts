@@ -13,6 +13,11 @@ export const REQUEST_ERROR_CODES = [
   'transcript_not_ready',
   'translation_not_found',
   'invalid_state',
+  'unsupported_translation',
+  'too_many_live_sessions',
+  'live_capacity',
+  'live_unavailable',
+  'session_ended',
   'idempotency_conflict',
   'media_too_large',
   'rate_limited',
@@ -44,6 +49,7 @@ export const LOCAL_CODES = [
   'aborted',
   'network_error',
   'upload_token_refused',
+  'websocket_unavailable',
 ] as const;
 
 export const CANCELED_CODE = 'canceled';

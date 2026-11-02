@@ -14,6 +14,10 @@ import {
   type HandlerType,
 } from './http.js';
 import { list } from './list.js';
+import {
+  attachLive, createLiveSession, getLiveSession, liveCapabilities,
+} from './live.js';
+import type { FakeLiveSessionType } from './live-session.js';
 import { getUploadedBytes, recordRequest } from './log.js';
 import { translations } from './translations.js';
 import {
@@ -33,6 +37,7 @@ export type FakeApiType = {
   peakChunks: () => number;
   peakActive: () => number;
   uploaded: (id: string) => Uint8Array;
+  liveSessions: Map<string, FakeLiveSessionType>;
   close: () => Promise<void>;
 };
 
@@ -91,6 +96,24 @@ const ROUTES: RouteType[] = [
     pattern: /^\/v1\/transcriptions\/(?<id>[^/]+)\/upload\/chunks\/(?<index>[^/]+)$/,
     handler: putChunk,
     bearer: false,
+  },
+  {
+    method: 'POST',
+    pattern: /^\/v1\/live\/sessions$/,
+    handler: createLiveSession,
+    bearer: true,
+  },
+  {
+    method: 'GET',
+    pattern: /^\/v1\/live\/sessions\/(?<id>[^/]+)$/,
+    handler: getLiveSession,
+    bearer: true,
+  },
+  {
+    method: 'GET',
+    pattern: /^\/v1\/live\/capabilities$/,
+    handler: liveCapabilities,
+    bearer: true,
   },
   {
     method: 'GET',
@@ -198,6 +221,7 @@ export const startFakeApi = async (options: Partial<KnobsType> = {}): Promise<Fa
       }
     });
   });
+  const wss = attachLive(server, state);
   await new Promise<void>(resolve => {
     server.listen(0, '127.0.0.1', resolve);
   });
@@ -211,8 +235,13 @@ export const startFakeApi = async (options: Partial<KnobsType> = {}): Promise<Fa
     peakChunks: () => state.peakChunks,
     peakActive: () => state.peakActive,
     uploaded: id => getUploadedBytes(state, id),
+    liveSessions: state.liveSessions,
     async close() {
       state.release();
+      for (const client of wss.clients) {
+        client.terminate();
+      }
+
       await new Promise<void>(resolve => {
         server.close(() => {
           resolve();

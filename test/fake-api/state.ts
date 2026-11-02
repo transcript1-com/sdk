@@ -1,5 +1,6 @@
 import type { LinkPlatformType } from '../../src/inputs/types.js';
 import type { Chunk, Status } from '../../src/types.js';
+import type { FakeLiveSessionType } from './live-session.js';
 
 export type KnobsType = {
   key: string;
@@ -18,6 +19,18 @@ export type KnobsType = {
   pollErrors: number[];
   dropPolls: number;
   pageSize: number;
+  liveError: LiveErrorKnobType | undefined;
+  liveManualStart: boolean;
+  liveAutoEnd: boolean;
+};
+
+export type LiveErrorKnobType = {
+  status: number;
+  code: string;
+  message?: string;
+  retryAfter?: number;
+  retryable?: boolean;
+  extra?: Record<string, unknown>;
 };
 
 export type JobType = {
@@ -70,6 +83,7 @@ export type StateType = {
   inFlight: number;
   peakChunks: number;
   peakActive: number;
+  liveSessions: Map<string, FakeLiveSessionType>;
   closing: Promise<void>;
   release: () => void;
 };
@@ -91,6 +105,9 @@ export const buildDefaultKnobs = (): KnobsType => ({
   pollErrors: [],
   dropPolls: 0,
   pageSize: 20,
+  liveError: undefined,
+  liveManualStart: false,
+  liveAutoEnd: true,
 });
 
 export const createState = (options: Partial<KnobsType> = {}): StateType => {
@@ -117,6 +134,7 @@ export const createState = (options: Partial<KnobsType> = {}): StateType => {
     inFlight: 0,
     peakChunks: 0,
     peakActive: 0,
+    liveSessions: new Map(),
     closing,
     release,
   };

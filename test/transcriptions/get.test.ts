@@ -111,7 +111,7 @@ test('preserves opaque new-platform media IDs without hashing or truncation', as
   const stub = createScriptedFetch([buildJsonReply(200, reply)]);
   const { config } = createTestConfig({ fetch: stub.fetch });
   const result = await get(config, 'tr_clip');
-  assert.ok(result.source.platform !== 'upload');
+  assert.ok(result.source.platform !== 'upload' && result.source.platform !== 'live');
   assert.equal(result.source.media_id, mediaId);
   assert.equal(result.source.platform, 'twitch');
 });
