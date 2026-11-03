@@ -21,11 +21,14 @@ export type ConfigType = {
   WebSocket: typeof WebSocket | undefined;
   sleep: (ms: number, signal?: AbortSignal) => Promise<void>;
   random: () => number;
+  now: () => number;
+  // when set, every request asks for a fresh token instead of sending apiKey
+  getAccessToken?: () => Promise<string>;
 };
 
-export type ConfigInternalsType = Partial<Pick<ConfigType, 'sleep' | 'random'>>;
+export type ConfigInternalsType = Partial<Pick<ConfigType, 'sleep' | 'random' | 'now'>>;
 
-const sleep = async (ms: number, signal?: AbortSignal): Promise<void> => new Promise((resolve, reject) => {
+export const sleep = async (ms: number, signal?: AbortSignal): Promise<void> => new Promise((resolve, reject) => {
   if (signal?.aborted) {
     reject(buildAbortedError());
     return;
@@ -96,5 +99,6 @@ export const resolveConfig = (options: ClientOptions = {}, internals: ConfigInte
     WebSocket: options.WebSocket,
     sleep: internals.sleep ?? sleep,
     random: internals.random ?? Math.random,
+    now: internals.now ?? Date.now,
   };
 };

@@ -36,3 +36,9 @@ test('explains X captions and their segment-only timing', () => {
     assert.ok(flat.includes(fact), fact);
   }
 });
+
+test('documents live transcription and the browser entry', () => {
+  assert.ok(readme.includes('## Live transcription'));
+  assert.ok(readme.includes('import { createLiveClient } from \'@transcript1/sdk/live\';'));
+  assert.ok(flat.includes('Never put an API key in a browser.'));
+});

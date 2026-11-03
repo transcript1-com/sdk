@@ -31,6 +31,8 @@ type CallType = {
   signal: AbortSignal | undefined;
   retry429: boolean;
   raw: boolean;
+  // ask config.getAccessToken for a token before every attempt
+  freshToken: boolean;
 };
 
 type ReplyType = {
@@ -120,7 +122,7 @@ const buildUrl = (config: ConfigType, options: RequestOptionsType): string => {
 const buildInit = (config: ConfigType, url: string, options: RequestOptionsType): RequestInit => {
   const { body, json } = encodeBody(options.body);
   const headers = new Headers({ 'User-Agent': `transcript1-sdk/${VERSION}` });
-  if (canSendKey(config, url, options)) {
+  if (canSendKey(config, url, options) && !config.getAccessToken) {
     headers.set('Authorization', `Bearer ${config.apiKey}`);
   }
 
@@ -200,9 +202,24 @@ const readReply = (reply: ReplyType, raw: boolean): HttpResponseType => {
   }
 };
 
+const addFreshToken = async (config: ConfigType, call: CallType): Promise<RequestInit> => {
+  if (!call.freshToken || !config.getAccessToken) {
+    return call.init;
+  }
+
+  // a failing getAccessToken is the caller's error: it is not a network failure
+  const token = await config.getAccessToken();
+  const headers = new Headers(call.init.headers);
+  headers.set('Authorization', `Bearer ${token}`);
+
+  return { ...call.init, headers };
+};
+
 // a drop while reading the body is a network failure too
 const send = async (config: ConfigType, call: CallType): Promise<ReplyType | FailureType> => {
-  const { url, init } = call;
+  const { url } = call;
+  // only await when a token is needed, so the plain path reaches fetch in the same tick
+  const init = call.freshToken && config.getAccessToken ? await addFreshToken(config, call) : call.init;
   try {
     const response = await config.fetch(url, init);
 
@@ -267,6 +284,7 @@ export const request = async (config: ConfigType, options: RequestOptionsType): 
     signal: options.signal,
     retry429: options.retry429 ?? true,
     raw: options.raw ?? false,
+    freshToken: canSendKey(config, url, options),
   };
 
   return runAttempt(config, call, 0);

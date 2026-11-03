@@ -11,6 +11,8 @@ export type FakeLiveSessionType = {
   frames: Buffer[];
   commands: string[];
   started: boolean;
+  // how many sockets have authenticated; above 1 means the session was resumed
+  connections: number;
   ended: boolean;
   closeCode: number | undefined;
   createdAt: Date;

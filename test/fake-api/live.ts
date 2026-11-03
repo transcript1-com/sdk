@@ -11,7 +11,7 @@ import {
   type HandlerType,
 } from './http.js';
 import type { FakeLiveSessionType } from './live-session.js';
-import type { StateType } from './state.js';
+import type { LiveErrorKnobType, StateType } from './state.js';
 
 const MAX_FRAME = 262_144;
 const SESSION_PATH = /^\/v1\/live\/sessions\/(?<id>[^/]+)\/stream$/;
@@ -28,9 +28,8 @@ const CAPABILITIES = {
   rate: 1,
 };
 
-const sendKnobError = (context: Parameters<HandlerType>[0]): boolean => {
-  const { state, res } = context;
-  const knob = state.knobs.liveError;
+const sendKnobError = (context: Parameters<HandlerType>[0], knob: LiveErrorKnobType | undefined): boolean => {
+  const { res } = context;
   if (!knob) {
     return false;
   }
@@ -67,6 +66,7 @@ const newSession = (state: StateType, options: Record<string, unknown>): FakeLiv
     frames: [],
     commands: [],
     started: false,
+    connections: 0,
     ended: false,
     closeCode: undefined,
     createdAt: new Date(),
@@ -79,7 +79,7 @@ const newSession = (state: StateType, options: Record<string, unknown>): FakeLiv
         type: 'session.started',
         session_id: id,
         transcription_id: session.transcriptionId,
-        resumed: false,
+        resumed: session.connections > 1,
         offset_ms: 0,
         ...extra,
       });
@@ -113,7 +113,7 @@ const newSession = (state: StateType, options: Record<string, unknown>): FakeLiv
 
 export const createLiveSession: HandlerType = async context => {
   const { state, req, res } = context;
-  if (sendKnobError(context)) {
+  if (sendKnobError(context, context.state.knobs.liveError)) {
     return;
   }
 
@@ -143,8 +143,49 @@ export const createLiveSession: HandlerType = async context => {
   });
 };
 
+const OPEN = 1;
+
+const statusOf = (session: FakeLiveSessionType): string => {
+  if (session.ended) {
+    return 'ended';
+  }
+
+  return session.socket?.readyState === OPEN ? 'connected' : 'disconnected';
+};
+
+export const liveToken: HandlerType = context => {
+  const { state, req, res, params } = context;
+  if (sendKnobError(context, state.knobs.liveTokenError)) {
+    return;
+  }
+
+  const session = state.liveSessions.get(params.id ?? '');
+  if (!session) {
+    sendError(res, 404, ERROR_CODES.not_found, 'Live session not found');
+    return;
+  }
+
+  if (session.ended) {
+    sendError(res, 409, 'session_ended', 'The live session has ended');
+    return;
+  }
+
+  session.token = randomBytes(16).toString('base64url');
+  session.tokenUsed = false;
+  const host = req.headers.host ?? '127.0.0.1';
+  sendJson(res, 200, {
+    token: session.token,
+    token_expires_at: new Date(Date.now() + 60_000).toISOString(),
+    websocket_url: `ws://${host}${state.knobs.prefix}/v1/live/sessions/${session.id}/stream`,
+  });
+};
+
 export const getLiveSession: HandlerType = context => {
   const { state, res, params } = context;
+  if (sendKnobError(context, state.knobs.liveGetError)) {
+    return;
+  }
+
   const session = state.liveSessions.get(params.id ?? '');
   if (!session) {
     sendError(res, 404, ERROR_CODES.not_found, 'Live session not found');
@@ -153,7 +194,7 @@ export const getLiveSession: HandlerType = context => {
 
   sendJson(res, 200, {
     id: session.id,
-    status: session.ended ? 'ended' : 'connected',
+    status: statusOf(session),
     end_reason: session.ended ? 'client_ended' : null,
     transcription_id: session.transcriptionId,
     options: session.options,
@@ -202,20 +243,33 @@ const onMessage = ({ session, socket, state }: ConnectionType, data: Buffer, isB
 const connect = (state: StateType, socket: WebSocket, id: string, protocols: string[]) => {
   const [name, token] = protocols;
   const session = state.liveSessions.get(id);
-  if (name !== 't1-live' || !session || session.token !== token || session.tokenUsed) {
+  const rejected = state.knobs.liveRejectConnects > 0;
+  if (rejected) {
+    state.knobs.liveRejectConnects--;
+  }
+
+  if (rejected || name !== 't1-live' || !session || session.token !== token || session.tokenUsed) {
     socket.send(JSON.stringify({ type: 'error', code: 'invalid_token', message: 'The token is invalid or was already used' }));
     socket.close(4001);
     return;
   }
 
   session.tokenUsed = true;
+  session.connections++;
+  // a valid connection replaces the one the server still thinks is open
+  if (session.socket?.readyState === OPEN) {
+    session.socket.close(4010);
+  }
+
   session.socket = socket;
   session.protocols = protocols;
   socket.on('message', (data: Buffer, isBinary: boolean) => {
     onMessage({ session, socket, state }, data, isBinary);
   });
   socket.on('close', code => {
-    session.closeCode = code;
+    if (session.socket === socket) {
+      session.closeCode = code;
+    }
   });
   if (!state.knobs.liveManualStart) {
     session.start();

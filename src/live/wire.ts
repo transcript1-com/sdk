@@ -24,6 +24,11 @@ export type LiveCreated = {
   rate: number;
 };
 
+export type LiveCredentials = {
+  websocketUrl: string;
+  token: string;
+};
+
 export type ServerEvent =
   | { type: 'started'; payload: LiveEvents['started'] }
   | { type: 'line'; payload: LiveLine }
@@ -246,6 +251,15 @@ export const parseCreated = (value: unknown): LiveCreated => {
     token: text(body.token),
     tokenExpiresAt: text(body.token_expires_at),
     rate: count(body.rate),
+  };
+};
+
+export const parseCredentials = (value: unknown): LiveCredentials => {
+  const body = isRecord(value) ? value : {};
+
+  return {
+    websocketUrl: text(body.websocket_url),
+    token: text(body.token),
   };
 };
 

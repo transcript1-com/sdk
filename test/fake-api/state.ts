@@ -20,6 +20,11 @@ export type KnobsType = {
   dropPolls: number;
   pageSize: number;
   liveError: LiveErrorKnobType | undefined;
+  liveTokenError: LiveErrorKnobType | undefined;
+  liveGetError: LiveErrorKnobType | undefined;
+  altKeys: string[];
+  // reject this many upcoming sockets with 4001, even with a valid token
+  liveRejectConnects: number;
   liveManualStart: boolean;
   liveAutoEnd: boolean;
 };
@@ -106,6 +111,10 @@ export const buildDefaultKnobs = (): KnobsType => ({
   dropPolls: 0,
   pageSize: 20,
   liveError: undefined,
+  liveTokenError: undefined,
+  liveGetError: undefined,
+  altKeys: [],
+  liveRejectConnects: 0,
   liveManualStart: false,
   liveAutoEnd: true,
 });

@@ -1,12 +1,16 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import WebSocketImpl from 'ws';
+import { expectRejection } from '../http/helpers.js';
+import { END_TIMEOUT_MS } from '../../src/live/session.js';
 import {
   concatFrames,
   createClient,
+  createClock,
   frameOf,
   payloadsOf,
   pcm,
+  startApi,
   startSession,
   until,
 } from './helpers.js';
@@ -173,67 +177,6 @@ test('send rejects audio that is not whole 16-bit samples', async t => {
   assert.deepEqual(server.frames, []);
 });
 
-test('send holds audio until the server has started the session, then flushes it in order', async t => {
-  const started = await startSession(t, { liveManualStart: true });
-  const { live, server } = started;
-  live.send(frameOf(1, 100));
-  live.send(frameOf(2, 100));
-  live.finalize();
-  live.send(frameOf(3, 100));
-  await new Promise(resolve => {
-    setTimeout(resolve, 50);
-  });
-
-  assert.deepEqual(server.frames, []);
-  assert.deepEqual(server.commands, []);
-
-  server.start();
-  await until(() => server.frames.length === 3 && server.commands.length === 1);
-
-  assert.deepEqual(server.frames.map(frame => frame[0]), [1, 2, 3]);
-  assert.deepEqual(server.commands, ['{"type":"finalize"}']);
-  live.send(frameOf(4, 100));
-  await until(() => server.frames.length === 4);
-});
-
-test('held audio keeps only the last 10 seconds', async t => {
-  // 8000 Hz: 10 s is 160000 bytes
-  const started = await startSession(t, { liveManualStart: true }, { sampleRate: 8000 });
-  const { live, server } = started;
-  for (let index = 0; index < 15; index++) {
-    live.send(frameOf(index + 1, 16_000));
-  }
-
-  server.start();
-  await until(() => concatFrames(server.frames).length === 160_000);
-
-  assert.deepEqual(server.frames.map(frame => frame[0]), [6, 7, 8, 9, 10, 11, 12, 13, 14, 15]);
-});
-
-test('held audio trims part of the oldest frame on an even boundary', async t => {
-  const started = await startSession(t, { liveManualStart: true }, { sampleRate: 8000 });
-  const { live, server } = started;
-  live.send(frameOf(1, 100_000));
-  live.send(frameOf(2, 100_000));
-  server.start();
-  await until(() => concatFrames(server.frames).length === 160_000);
-
-  assert.deepEqual(server.frames.map(frame => [frame[0], frame.length]), [[1, 60_000], [2, 100_000]]);
-});
-
-test('end before the session has started flushes the held audio and then ends', async t => {
-  const started = await startSession(t, { liveManualStart: true });
-  const { live, server } = started;
-  live.send(frameOf(1, 100));
-  const pending = live.end();
-  server.start();
-  const result = await pending;
-
-  assert.equal(result.reason, 'client_ended');
-  assert.equal(server.frames.length, 1);
-  assert.deepEqual(server.commands, ['{"type":"end"}']);
-});
-
 test('finalize sends the finalize command', async t => {
   const { live, server } = await startSession(t);
   live.finalize();
@@ -281,58 +224,78 @@ test('unknown and malformed server messages are ignored', async t => {
   assert.deepEqual(payloadsOf(started, 'error'), []);
 });
 
-test('a close without session.ended ends the session as disconnected', async t => {
+test('close code 4004 ends the session as disconnected without reconnecting', async t => {
   const started = await startSession(t);
-  started.server.emit({
-    type: 'usage', connected_ms: 5000, audio_ms: 4000, minutes_charged: 1, minutes_remaining: 9,
-  });
-  await until(() => payloadsOf(started, 'usage').length === 1);
-  started.server.drop(1006);
+  started.server.drop(4004);
+  await until(() => payloadsOf(started, 'ended').length === 1);
   const result = await started.live.end();
 
-  assert.deepEqual(result, {
-    reason: 'disconnected',
-    transcriptionId: started.live.transcriptionId,
-    minutesCharged: 1,
-    connectedMs: 5000,
-    audioMs: 4000,
-  });
-  assert.deepEqual(payloadsOf(started, 'ended'), [result]);
+  assert.equal(result.reason, 'disconnected');
+  assert.deepEqual(payloadsOf(started, 'reconnecting'), []);
+  assert.equal(started.fake.requests.filter(request => request.path.endsWith('/token')).length, 0);
 });
 
-test('an invalid token ends the session as disconnected', async t => {
+test('an invalid token makes start() fail with network_error', async t => {
   class WrongToken extends WebSocketImpl {
     constructor(url: string, protocols: string[]) {
       super(url, [protocols[0] ?? '', 'wrong-token']);
     }
   }
 
-  const started = await startSession(t, {}, {}, {
-    client: fake => createClient(fake, { WebSocket: WrongToken as unknown as typeof WebSocket }),
-    waitForServer: false,
+  const fake = await startApi(t);
+  const error = await expectRejection(createClient(fake, { WebSocket: WrongToken as unknown as typeof WebSocket }).live.start());
+
+  assert.equal(error.code, 'network_error');
+  assert.equal(error.retryable, true);
+  assert.match(error.message, /token is invalid/);
+  assert.equal(fake.liveSessions.get('lv_1')?.tokenUsed, false);
+});
+
+test('end() falls back to disconnected after 30 s, confirmed by one session read', async t => {
+  const clock = createClock([END_TIMEOUT_MS]);
+  const started = await startSession(t, { liveAutoEnd: false }, {}, { clock });
+  const reads = () => started.fake.requests.filter(request => request.method === 'GET' && request.path === `/v1/live/sessions/${started.live.id}`);
+  const pending = started.live.end();
+  await until(() => clock.isHeld(END_TIMEOUT_MS));
+
+  assert.equal(reads().length, 0);
+  clock.release(END_TIMEOUT_MS);
+  const result = await pending;
+
+  assert.deepEqual(result, {
+    reason: 'disconnected',
+    transcriptionId: started.live.transcriptionId,
+    minutesCharged: 1,
+    connectedMs: 1500,
+    audioMs: 1000,
   });
-  const result = await started.live.end();
-
-  assert.equal(result.reason, 'disconnected');
-  assert.equal(started.server.tokenUsed, false);
+  assert.equal(reads().length, 1);
+  assert.deepEqual(payloadsOf(started, 'ended'), [result]);
 });
 
-test('close code 4004 ends the session as disconnected', async t => {
-  const started = await startSession(t);
-  started.server.drop(4004);
-  const result = await started.live.end();
+test('the end() fallback still resolves when the session read fails', async t => {
+  const clock = createClock([END_TIMEOUT_MS]);
+  const started = await startSession(t, { liveAutoEnd: false, liveGetError: { status: 404, code: 'not_found' } }, {}, { clock });
+  const pending = started.live.end();
+  await until(() => clock.isHeld(END_TIMEOUT_MS));
+  clock.release(END_TIMEOUT_MS);
+  const result = await pending;
 
   assert.equal(result.reason, 'disconnected');
+  assert.equal(result.minutesCharged, 0);
 });
 
-test('a reconnect event is surfaced and the following 1012 close ends the session', async t => {
-  const started = await startSession(t);
-  started.server.emit({ type: 'reconnect', reason: 'server_restart' });
-  started.server.drop(1012);
-  const result = await started.live.end();
+test('a session.ended before 30 s cancels the end() fallback', async t => {
+  const clock = createClock([END_TIMEOUT_MS]);
+  const started = await startSession(t, { liveAutoEnd: false }, {}, { clock });
+  const pending = started.live.end();
+  await until(() => clock.isHeld(END_TIMEOUT_MS));
+  started.server.finish('client_ended');
+  const result = await pending;
 
-  assert.equal(payloadsOf(started, 'reconnecting').length, 1);
-  assert.equal(result.reason, 'disconnected');
+  assert.equal(result.reason, 'client_ended');
+  assert.equal(clock.isHeld(END_TIMEOUT_MS), false);
+  assert.equal(started.fake.requests.filter(request => request.method === 'GET').length, 0);
 });
 
 test('send and finalize after the session ended do nothing', async t => {

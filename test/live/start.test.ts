@@ -5,7 +5,13 @@ import { Transcript1 } from '../../src/client.js';
 import { Transcript1Error } from '../../src/errors.js';
 import type { RecordedRequestType } from '../fake-api/server.js';
 import { buildJsonReply, createScriptedFetch, expectRejection } from '../http/helpers.js';
-import { createClient, startApi, startSession } from './helpers.js';
+import {
+  createClient,
+  startApi,
+  startManual,
+  startSession,
+  until,
+} from './helpers.js';
 
 const parse = (body: Buffer | undefined): unknown => JSON.parse(body?.toString() ?? '{}');
 
@@ -213,4 +219,62 @@ test('capabilities reports an unavailable provider', async () => {
   const t1 = new Transcript1({ apiKey: 't1_test', baseUrl: 'http://api.test', fetch: stub.fetch });
 
   assert.deepEqual(await t1.live.capabilities(), { available: false, rate: 1 });
+});
+
+const settleFor = async (ms: number) => new Promise(resolve => {
+  setTimeout(resolve, ms);
+});
+
+test('start resolves only after session.started, and the caller still sees started and an early line', async t => {
+  const manual = await startManual(t);
+  let resolved = false;
+  manual.pending.then(() => {
+    resolved = true;
+  });
+  await settleFor(50);
+
+  assert.equal(resolved, false);
+  manual.server.start({ transcription_id: 'tr_from_started' });
+  manual.server.emit({
+    type: 'line',
+    line: {
+      id: 0, start_ms: 0, end_ms: 500, speaker: null, language: 'en', text: 'early', final: false, translation: null,
+    },
+  });
+  const live = await manual.pending;
+
+  assert.equal(live.transcriptionId, 'tr_from_started');
+  const seen: string[] = [];
+  live.on('started', event => {
+    seen.push(`started:${event.transcriptionId ?? 'none'}`);
+  });
+  live.on('line', line => {
+    seen.push(`line:${line.text}`);
+  });
+  await until(() => seen.length === 2);
+
+  assert.deepEqual(seen, ['started:tr_from_started', 'line:early']);
+  assert.equal(live.lines.length, 1);
+});
+
+test('start fails with network_error when the socket closes before session.started', async t => {
+  const manual = await startManual(t);
+  manual.server.drop(1011);
+  const error = await expectRejection(manual.pending);
+
+  assert.equal(error.code, 'network_error');
+  assert.equal(error.retryable, true);
+  assert.match(error.message, /1011/);
+});
+
+test('aborting while waiting for session.started rejects with aborted and closes the socket', async t => {
+  const fake = await startApi(t, { liveManualStart: true });
+  const controller = new AbortController();
+  const pending = createClient(fake).live.start({ signal: controller.signal });
+  await until(() => fake.liveSessions.get('lv_1')?.socket !== undefined);
+  controller.abort();
+  const error = await expectRejection(pending);
+
+  assert.equal(error.code, 'aborted');
+  await until(() => fake.liveSessions.get('lv_1')?.closeCode !== undefined);
 });

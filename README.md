@@ -150,6 +150,40 @@ const german = await t1.download(job.id, { format: 'srt', translation: { mode: '
 
 `translate` resolves to `{ transcription_id, language, status }`. It rejects with `not_found` (404), `transcript_not_ready` (409, the transcript is not completed yet) or `invalid_request` (422, bad language).
 
+## Live transcription
+
+Stream raw PCM (16-bit, mono) and get subtitle lines back while people speak, optionally translated in real time. See [Live transcription](https://transcript1.com/docs/live) for the protocol, billing and limits.
+
+```ts
+const live = await t1.live.start({ language: 'en', translateTo: 'es', sampleRate: 16000 });
+
+live.on('line', line => {
+  // the full current state of one line: replace it by line.id
+  console.log(line.id, line.text, line.translation?.text);
+});
+
+live.send(pcm); // Int16Array, Uint8Array or ArrayBuffer of 16-bit mono samples
+const result = await live.end(); // { reason, transcriptionId, minutesCharged, connectedMs, audioMs }
+```
+
+- `start()` resolves once the session has started, so no event is missed.
+- `live.lines` holds every line so far, in order. `live.finalize()` closes the current line, for example when the video pauses.
+- Other events: `started`, `usage`, `warning`, `reconnecting`, `reconnected`, `ended` and `error`. `on()` returns a function that removes the handler.
+- A dropped connection reconnects by itself within 2 minutes, with backoff from 0.5 to 8 seconds, and the last 10 seconds of audio are sent again. If `end()` gets no answer from the server within 30 seconds, the SDK reads the session once and resolves with what it reports, or with reason `disconnected`.
+- `t1.live.capabilities()` lists the languages and translation targets; `t1.live.get(id)` reads a session.
+- The live client uses the built-in `WebSocket` (Node 22+, Bun, Deno, browsers). On Node 20, pass one in: `new Transcript1({ WebSocket })`, for example from the `ws` package.
+
+### In a browser
+
+Never put an API key in a browser. Use the `@transcript1/sdk/live` entry with a short-lived OAuth access token instead; it is asked for again before every request, so it can be refreshed:
+
+```ts
+import { createLiveClient } from '@transcript1/sdk/live';
+
+const live = createLiveClient({ getAccessToken: async () => getOauthAccessToken() });
+const session = await live.start({ translateTo: 'de' });
+```
+
 ## Progress
 
 ```ts

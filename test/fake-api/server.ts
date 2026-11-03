@@ -15,7 +15,7 @@ import {
 } from './http.js';
 import { list } from './list.js';
 import {
-  attachLive, createLiveSession, getLiveSession, liveCapabilities,
+  attachLive, createLiveSession, getLiveSession, liveCapabilities, liveToken,
 } from './live.js';
 import type { FakeLiveSessionType } from './live-session.js';
 import { getUploadedBytes, recordRequest } from './log.js';
@@ -104,6 +104,12 @@ const ROUTES: RouteType[] = [
     bearer: true,
   },
   {
+    method: 'POST',
+    pattern: /^\/v1\/live\/sessions\/(?<id>[^/]+)\/token$/,
+    handler: liveToken,
+    bearer: true,
+  },
+  {
     method: 'GET',
     pattern: /^\/v1\/live\/sessions\/(?<id>[^/]+)$/,
     handler: getLiveSession,
@@ -165,7 +171,7 @@ const isAuthorized = (state: StateType, req: IncomingMessage, route: RouteType):
     return true;
   }
 
-  return req.headers.authorization === `Bearer ${state.knobs.key}`;
+  return [state.knobs.key, ...state.knobs.altKeys].some(key => req.headers.authorization === `Bearer ${key}`);
 };
 
 const handle = async (state: StateType, req: IncomingMessage, res: ServerResponse) => {
