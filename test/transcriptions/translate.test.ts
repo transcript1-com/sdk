@@ -119,6 +119,23 @@ test('translate posts the language and returns the API answer', async t => {
   assert.deepEqual(parseBody(request), { language: 'fr' });
 });
 
+test('a translation into the transcript language carries same_as_source', async t => {
+  const fake = await startApi(t);
+  const { config } = createApiConfig(fake);
+  const job = await create(config, LINK);
+  const result = await translate(config, job.id, 'en');
+  const read = await get(config, job.id, { translation: { mode: 'both', language: 'en' } });
+  const sameAsSource: boolean | undefined = result.same_as_source;
+
+  assert.equal(sameAsSource, true);
+  assert.deepEqual(result, {
+    transcription_id: job.id, language: 'en', status: 'completed', same_as_source: true,
+  });
+  assert.equal(read.translation?.same_as_source, true);
+  assert.deepEqual(read.translations, [{ language: 'en', status: 'completed', same_as_source: true }]);
+  assert.equal(read.transcript?.segments[0]?.translation, read.transcript?.segments[0]?.text);
+});
+
 test('translate is on the client', async t => {
   const fake = await startApi(t);
   const t1 = new Transcript1({ apiKey: fake.knobs.key, baseUrl: fake.url });

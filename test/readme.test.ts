@@ -25,6 +25,12 @@ test('documents translation', () => {
   }
 });
 
+test('documents translations into the language the audio is already in', () => {
+  for (const fact of ['same_as_source: true', 'sameLanguage: true', 'show the line once', '1.5.1']) {
+    assert.ok(flat.includes(fact), fact);
+  }
+});
+
 test('links to the pricing page instead of listing prices', () => {
   assert.ok(flat.includes('https://transcript1.com/#pricing'));
   assert.ok(!flat.includes('$9'));

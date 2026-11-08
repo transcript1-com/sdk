@@ -132,7 +132,7 @@ The constructor accepts `apiKey`, `baseUrl`, `fetch` and `maxRetries` (default 2
 
 `transcriptions.get`: `wait`, `includeWords`, `translation`, `onProgress`, `signal`. Progress events are reported while waiting.
 
-`translation` is `{ mode: 'only' | 'both', language: 'de' }`: segments carry the translation in that language next to the original text (`both`) or instead of it (`only`). Omit it to get the original text only (the SDK sends `translation=none`). A language the transcription has no translation for rejects with `translation_not_found` (404); a malformed language is `invalid_request` (422). `Transcription.translations` lists every translation (`{ language, status }`), oldest first.
+`translation` is `{ mode: 'only' | 'both', language: 'de' }`: segments carry the translation in that language next to the original text (`both`) or instead of it (`only`). Omit it to get the original text only (the SDK sends `translation=none`). A language the transcription has no translation for rejects with `translation_not_found` (404); a malformed language is `invalid_request` (422). `Transcription.translations` lists every translation (`{ language, status, same_as_source? }`), oldest first.
 
 Returned objects keep the API's field names (`snake_case`).
 
@@ -149,6 +149,8 @@ const german = await t1.download(job.id, { format: 'srt', translation: { mode: '
 ```
 
 `translate` resolves to `{ transcription_id, language, status }`. It rejects with `not_found` (404), `transcript_not_ready` (409, the transcript is not completed yet) or `invalid_request` (422, bad language).
+
+When the transcript is already in the requested language, nothing is translated and nothing is charged: the translation is `completed` at once and carries `same_as_source: true` in the `translate` result, in `translation` and in its `translations` entry. Its text is the original text, and text, SRT and VTT downloads show each line once. The field is sent only when it is `true` (typed since 1.5.1).
 
 ## Live transcription
 
@@ -170,6 +172,7 @@ const result = await live.end(); // { reason, transcriptionId, minutesCharged, c
 - `live.lines` holds every line so far, in order. `live.finalize()` closes the current line, for example when the video pauses.
 - Other events: `started`, `usage`, `warning`, `reconnecting`, `reconnected`, `ended` and `error`. `on()` returns a function that removes the handler.
 - A dropped connection reconnects by itself within 2 minutes, with backoff from 0.5 to 8 seconds, and the last 10 seconds of audio are sent again. If `end()` gets no answer from the server within 30 seconds, the SDK reads the session once and resolves with what it reports, or with reason `disconnected`.
+- A line already in the target language is not translated: its `translation` is its own text with `sameLanguage: true`, so show the line once. When the session's `language` equals `translateTo`, nothing is translated and the `started` event carries `sameLanguage: true`. Both are present only when `true` (1.5.1 and newer).
 - `t1.live.capabilities()` lists the languages and translation targets; `t1.live.get(id)` reads a session.
 - The live client uses the built-in `WebSocket` (Node 22+, Bun, Deno, browsers). On Node 20, pass one in: `new Transcript1({ WebSocket })`, for example from the `ws` package.
 

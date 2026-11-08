@@ -67,6 +67,30 @@ test('line events update lines in place by id and keep them in order', async t =
   assert.deepEqual(payloadsOf(started, 'line').map(line => line.text), ['second draft', 'first', 'second line']);
 });
 
+test('a line already in the target language carries sameLanguage, only when the server sends true', async t => {
+  const started = await startSession(t);
+  started.server.emit(wireLine(0, 'Hello there.', true, {
+    translation: {
+      language: 'en', text: 'Hello there.', final: true, same_language: true,
+    },
+  }));
+  started.server.emit(wireLine(1, 'Hola.', true, {
+    language: 'es',
+    translation: {
+      language: 'en', text: 'Hello.', final: true, same_language: false,
+    },
+  }));
+  await until(() => started.live.lines.length === 2);
+  const [same, other] = started.live.lines;
+  const sameLanguage: boolean | undefined = same?.translation?.sameLanguage;
+
+  assert.equal(sameLanguage, true);
+  assert.deepEqual(same?.translation, {
+    language: 'en', text: 'Hello there.', final: true, sameLanguage: true,
+  });
+  assert.deepEqual(other?.translation, { language: 'en', text: 'Hello.', final: true });
+});
+
 test('lines keeps the same array while it is updated', async t => {
   const started = await startSession(t);
   const before = started.live.lines;

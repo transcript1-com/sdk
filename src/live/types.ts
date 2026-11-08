@@ -11,6 +11,8 @@ export type LiveTranslation = {
   language: string;
   text: string;
   final: boolean;
+  // true when the line is already in the target language: the translation is its own text, so show the line once
+  sameLanguage?: boolean;
 };
 
 export type LiveLine = {
@@ -42,7 +44,14 @@ export type LiveEndResult = {
 };
 
 export type LiveEvents = {
-  started: { sessionId: string; transcriptionId: string | null; resumed: boolean; offsetMs: number };
+  started: {
+    sessionId: string;
+    transcriptionId: string | null;
+    resumed: boolean;
+    offsetMs: number;
+    // true when the session's language is its translateTo: no line is translated
+    sameLanguage?: boolean;
+  };
   line: LiveLine;
   usage: { connectedMs: number; audioMs: number; minutesCharged: number; minutesRemaining: number };
   warning: { code: 'balance_low' | 'audio_dropped' | 'idle_timeout_soon'; message: string };

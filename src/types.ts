@@ -93,6 +93,8 @@ export type TranslationInfo = {
   language: string;
   status: 'processing' | 'completed' | 'failed';
   error?: string;
+  // true when the transcript is already in this language: nothing was translated, the text is the original
+  same_as_source?: boolean;
 };
 
 export type TranslationOption = {
@@ -104,6 +106,7 @@ export type TranslateResult = {
   transcription_id: string;
   language: string;
   status: TranslationInfo['status'];
+  same_as_source?: boolean;
 };
 
 export type Transcription = {

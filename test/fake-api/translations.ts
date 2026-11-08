@@ -6,6 +6,7 @@ import {
   type HandlerType,
 } from './http.js';
 import { advanceJob, findOwnedJob } from './jobs.js';
+import { SOURCE_LANGUAGE } from './serialize.js';
 
 export const translations: HandlerType = async context => {
   const { state, res } = context;
@@ -28,5 +29,10 @@ export const translations: HandlerType = async context => {
   }
 
   job.translated = [...job.translated ?? [], language];
-  sendJson(res, 200, { transcription_id: job.id, language, status: 'completed' });
+  sendJson(res, 200, {
+    transcription_id: job.id,
+    language,
+    status: 'completed',
+    ...language === SOURCE_LANGUAGE ? { same_as_source: true } : {},
+  });
 };

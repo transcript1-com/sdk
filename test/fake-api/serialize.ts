@@ -27,6 +27,15 @@ const SEGMENTS = [
 
 export type TranslationModeType = 'both' | 'only' | 'none';
 
+// the fake transcript is English: like the API, a translation into English is the original text, marked same_as_source
+export const SOURCE_LANGUAGE = 'en';
+
+const translationInfo = (language: string, status: 'processing' | 'completed') => ({
+  language,
+  status,
+  ...status === 'completed' && language === SOURCE_LANGUAGE ? { same_as_source: true } : {},
+});
+
 export const listTranslations = (job: JobType): string[] => {
   const languages = [job.translateTo, ...job.translated ?? []].filter(Boolean) as string[];
 
@@ -58,7 +67,7 @@ const buildSegments = (job: JobType, mode: TranslationModeType = 'none', languag
     }
 
     if (language && job.status === 'completed' && mode !== 'none') {
-      built.translation = `[${language}] ${segment.text}`;
+      built.translation = language === SOURCE_LANGUAGE ? segment.text : `[${language}] ${segment.text}`;
       if (mode === 'only') {
         built.text = built.translation;
       }
@@ -149,10 +158,10 @@ export const serialize = (state: StateType, job: JobType, withTranscript: boolea
   const language = selectLanguage(job, requested);
   const status = job.status === 'completed' ? 'completed' : 'processing';
   if (language) {
-    summary.translation = { language, status };
+    summary.translation = translationInfo(language, status);
   }
 
-  summary.translations = listTranslations(job).map(item => ({ language: item, status }));
+  summary.translations = listTranslations(job).map(item => translationInfo(item, status));
 
   if (job.status !== 'completed') {
     return summary;

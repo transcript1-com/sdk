@@ -257,6 +257,19 @@ test('start resolves only after session.started, and the caller still sees start
   assert.equal(live.lines.length, 1);
 });
 
+test('started carries sameLanguage when the session language is the target language', async t => {
+  const manual = await startManual(t, { language: 'en', translateTo: 'en' });
+  manual.server.start({ same_language: true });
+  const live = await manual.pending;
+  const seen: Array<boolean | undefined> = [];
+  live.on('started', event => {
+    seen.push(event.sameLanguage);
+  });
+  await until(() => seen.length === 1);
+
+  assert.deepEqual(seen, [true]);
+});
+
 test('start fails with network_error when the socket closes before session.started', async t => {
   const manual = await startManual(t);
   manual.server.drop(1011);

@@ -7,6 +7,7 @@ import type {
   LiveSessionInfo,
   LiveStartOptions,
   LiveStatus,
+  LiveTranslation,
   LiveTranslationPair,
 } from './types.js';
 
@@ -87,11 +88,17 @@ const parseTranslation = (value: unknown): LiveLine['translation'] => {
     return null;
   }
 
-  return {
+  const translation: LiveTranslation = {
     language: text(value.language),
     text: text(value.text),
     final: value.final === true,
   };
+  // the server sends same_language only when it is true
+  if (value.same_language === true) {
+    translation.sameLanguage = true;
+  }
+
+  return translation;
 };
 
 export const parseLine = (value: unknown): LiveLine | undefined => {
@@ -115,15 +122,20 @@ export const parseLine = (value: unknown): LiveLine | undefined => {
   };
 };
 
-const parseStarted = (message: RecordType): ServerEvent => ({
-  type: 'started',
-  payload: {
+const parseStarted = (message: RecordType): ServerEvent => {
+  const payload: LiveEvents['started'] = {
     sessionId: text(message.session_id),
     transcriptionId: nullableText(message.transcription_id),
     resumed: message.resumed === true,
     offsetMs: count(message.offset_ms),
-  },
-});
+  };
+  // the server sends same_language only when it is true
+  if (message.same_language === true) {
+    payload.sameLanguage = true;
+  }
+
+  return { type: 'started', payload };
+};
 
 const parseUsage = (message: RecordType): ServerEvent => ({
   type: 'usage',

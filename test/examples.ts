@@ -10,6 +10,8 @@ import {
   type Format,
   type GetOptions,
   type ListParams,
+  type LiveEvents,
+  type LiveLine,
   type ProgressEvent,
   type Transcription,
   type TranscriptionSummary,
@@ -91,9 +93,10 @@ export const examples = async (buffer: Buffer, blob: Blob): Promise<void> => {
   await t1.transcriptions.get(job.id);
   const translated = await t1.transcriptions.translate(job.id, 'de');
   const translatedStatus: 'processing' | 'completed' | 'failed' = translated.status;
+  const sameAsSource: boolean | undefined = translated.same_as_source ?? finished.translation?.same_as_source;
   const translatedSrt: string = await t1.download(job.id, { format: 'srt', translation: { mode: 'only', language: 'de' } });
   await t1.transcribe(job.source.platform === 'upload' ? './a.m4a' : 'https://youtu.be/dQw4w9WgXcQ', { translateTo: 'pl' });
-  console.log(translatedStatus, translatedSrt, finished.translation?.language, finished.translations?.map(item => item.language), finished.transcript?.segments[0]?.translation);
+  console.log(translatedStatus, sameAsSource, translatedSrt, finished.translation?.language, finished.translations?.map(item => item.language), finished.transcript?.segments[0]?.translation);
   if (finished.source.platform === 'upload') {
     const uploaded: string | null = finished.source.filename;
     console.log(uploaded);
@@ -133,3 +136,8 @@ export const examples = async (buffer: Buffer, blob: Blob): Promise<void> => {
     }
   }
 };
+
+// a line already in the target language is its own translation, so it is shown once
+export const showsOnce = (line: LiveLine): boolean => line.translation?.sameLanguage === true;
+
+export const translatesNothing = (started: LiveEvents['started']): boolean => started.sameLanguage === true;
