@@ -244,10 +244,23 @@ export const startFakeApi = async (options: Partial<KnobsType> = {}): Promise<Fa
     liveSessions: state.liveSessions,
     async close() {
       state.release();
-      for (const client of wss.clients) {
-        client.terminate();
+      // End sessions before closing transport: terminate() starts the SDK's reconnect loop.
+      for (const session of state.liveSessions.values()) {
+        if (!session.ended && session.socket?.readyState === 1) {
+          session.finish();
+        }
       }
 
+      for (const client of wss.clients) {
+        // Also settle sockets which never authenticated or received session.started.
+        client.close(4004);
+      }
+
+      await new Promise<void>(resolve => {
+        wss.close(() => {
+          resolve();
+        });
+      });
       await new Promise<void>(resolve => {
         server.close(() => {
           resolve();
