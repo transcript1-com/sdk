@@ -111,6 +111,8 @@ export type TranslateResult = {
 
 export type Transcription = {
   id: string;
+  // Absent on older API versions; null for transcriptions without a group.
+  group_id?: string | null;
   object: 'transcription';
   status: Status;
   source: LinkSource | UploadSource | LiveSource;
