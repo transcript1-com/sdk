@@ -47,8 +47,9 @@ const END_REASONS = new Set<string>([
 const FINAL_CLOSE_CODES = new Set([CLOSE_NOT_FOUND, CLOSE_PROTOCOL, CLOSE_REPLACED]);
 
 type QueuedType =
-  | { kind: 'audio'; data: Uint8Array }
-  | { kind: 'finalize' };
+  | { kind: 'audio'; data: Uint8Array; mediaMs?: number }
+  | { kind: 'finalize' }
+  | { kind: 'position'; audioMs: number; mediaMs: number; inputAudioMs: number };
 
 type DeferredType<T> = {
   promise: Promise<T>;
@@ -132,6 +133,12 @@ export class Session implements LiveSession {
   readonly #done = createDeferred<LiveEndResult>();
   #queue: QueuedType[] = [];
   #queuedBytes = 0;
+  #lastPosition = -1;
+  #inputAudioMs = 0;
+  #wireAudioMs = 0;
+  #lastWirePosition = 0;
+  #mediaAnchor: { audioMs: number; mediaMs: number } | undefined;
+  #wireAnchor: { audioMs: number; mediaMs: number } | undefined;
   #ready = false;
   #reconnecting = false;
   #settling = false;
@@ -198,7 +205,11 @@ export class Session implements LiveSession {
     }
 
     for (let offset = 0; offset < bytes.byteLength; offset += MAX_FRAME_BYTES) {
-      this.#dispatch({ kind: 'audio', data: bytes.subarray(offset, offset + MAX_FRAME_BYTES) });
+      const data = bytes.subarray(offset, offset + MAX_FRAME_BYTES);
+      const mediaMs = this.#mediaAnchor
+        ? this.#mediaAnchor.mediaMs + this.#inputAudioMs - this.#mediaAnchor.audioMs : undefined;
+      this.#dispatch({ kind: 'audio', data, mediaMs });
+      this.#inputAudioMs += data.byteLength / (this.#deps.sampleRate * 2) * 1000;
     }
   }
 
@@ -206,6 +217,23 @@ export class Session implements LiveSession {
     if (!this.#finished && !this.#endRequested) {
       this.#dispatch({ kind: 'finalize' });
     }
+  }
+
+  position(audioMs: number, mediaMs: number): void {
+    if (this.#finished || this.#endRequested) {
+      return;
+    }
+
+    if (!Number.isSafeInteger(audioMs) || !Number.isSafeInteger(mediaMs)
+      || audioMs < Math.max(0, this.#lastPosition) || mediaMs < 0) {
+      throw new RangeError('Invalid media position: non-negative integer times and non-decreasing audio time required');
+    }
+
+    this.#lastPosition = audioMs;
+    this.#mediaAnchor = { audioMs, mediaMs };
+    this.#dispatch({
+      kind: 'position', audioMs, mediaMs, inputAudioMs: this.#inputAudioMs,
+    });
   }
 
   async end(): Promise<LiveEndResult> {
@@ -308,16 +336,38 @@ export class Session implements LiveSession {
         index--;
       } else {
         item.data = item.data.subarray(cut);
+        if (item.mediaMs !== undefined) {
+          item.mediaMs += cut / (this.#deps.sampleRate * 2) * 1000;
+        }
       }
     }
   }
 
   #transmit(item: QueuedType): void {
+    if (item.kind === 'position') {
+      this.#sendPosition(Math.max(this.#wireAnchor?.audioMs ?? 0,
+        Math.round(item.audioMs - item.inputAudioMs + this.#wireAudioMs)), item.mediaMs);
+      return;
+    }
+
     if (item.kind === 'audio') {
+      if (item.mediaMs !== undefined && (!this.#wireAnchor
+        || Math.abs(this.#wireAnchor.mediaMs + this.#wireAudioMs - this.#wireAnchor.audioMs - item.mediaMs) > 1)) {
+        this.#sendPosition(Math.round(this.#wireAudioMs), Math.max(0, Math.round(item.mediaMs)));
+      }
+
       this.#socket?.send(item.data);
+      this.#wireAudioMs += item.data.byteLength / (this.#deps.sampleRate * 2) * 1000;
     } else {
       this.#socket?.send(FINALIZE_COMMAND);
     }
+  }
+
+  #sendPosition(audioMs: number, mediaMs: number): void {
+    const position = Math.max(audioMs, this.#lastWirePosition);
+    this.#lastWirePosition = position;
+    this.#socket?.send(JSON.stringify({ type: 'media.position', audio_ms: position, media_ms: mediaMs }));
+    this.#wireAnchor = { audioMs: position, mediaMs };
   }
 
   #sendEnd(): void {
@@ -426,6 +476,9 @@ export class Session implements LiveSession {
     }
 
     this.#transcriptionId = payload.transcriptionId ?? this.#transcriptionId;
+    this.#wireAudioMs = payload.offsetMs;
+    // Replay carries its own media timestamps, including any prefix removed by the ten-second buffer limit.
+    this.#wireAnchor = undefined;
     this.#ready = true;
     this.#emit('started', payload);
     this.#flush();

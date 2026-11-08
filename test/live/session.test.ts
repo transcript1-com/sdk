@@ -123,6 +123,8 @@ test('end called twice returns the same result and sends one command', async t =
   const second = started.live.end();
 
   assert.deepEqual(await first, await second);
+  // Initial events are released on the next turn so callers can attach listeners after start().
+  await until(() => payloadsOf(started, 'ended').length === 1);
   assert.equal(started.server.commands.length, 1);
   assert.equal(payloadsOf(started, 'ended').length, 1);
 });

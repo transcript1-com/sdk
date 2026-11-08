@@ -1,4 +1,5 @@
 export type LiveStartOptions = {
+  media?: { url: string; key?: string; title?: string; duration?: number };
   language?: string;
   translateTo?: string;
   diarize?: boolean;
@@ -45,6 +46,7 @@ export type LiveEndResult = {
 
 export type LiveEvents = {
   started: {
+    groupId?: string;
     sessionId: string;
     transcriptionId: string | null;
     resumed: boolean;
@@ -67,6 +69,8 @@ export type LiveSession = {
   readonly lines: readonly LiveLine[];
   on<K extends keyof LiveEvents>(event: K, handler: (payload: LiveEvents[K]) => void): () => void;
   send(audio: Int16Array | Uint8Array | ArrayBuffer): void;
+  // Milliseconds on the session audio clock and video timeline, before the corresponding audio.
+  position(audioMs: number, mediaMs: number): void;
   finalize(): void;
   end(): Promise<LiveEndResult>;
 };

@@ -129,6 +129,10 @@ const parseStarted = (message: RecordType): ServerEvent => {
     resumed: message.resumed === true,
     offsetMs: count(message.offset_ms),
   };
+  if (typeof message.group_id === 'string') {
+    payload.groupId = message.group_id;
+  }
+
   // the server sends same_language only when it is true
   if (message.same_language === true) {
     payload.sameLanguage = true;
@@ -229,6 +233,10 @@ export const END_COMMAND = JSON.stringify({ type: 'end' });
 
 export const buildCreateBody = (options: LiveStartOptions): RecordType => {
   const body: RecordType = {};
+  if (options.media !== undefined) {
+    body.media = options.media;
+  }
+
   if (options.language !== undefined) {
     body.language = options.language;
   }
