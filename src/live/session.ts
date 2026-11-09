@@ -49,7 +49,8 @@ const FINAL_CLOSE_CODES = new Set([CLOSE_NOT_FOUND, CLOSE_PROTOCOL, CLOSE_REPLAC
 type QueuedType =
   | { kind: 'audio'; data: Uint8Array; mediaMs?: number }
   | { kind: 'finalize' }
-  | { kind: 'position'; audioMs: number; mediaMs: number; inputAudioMs: number };
+  | { kind: 'position'; audioMs: number; mediaMs: number; inputAudioMs: number }
+  | { kind: 'boundary'; audioMs: number; inputAudioMs: number };
 
 type DeferredType<T> = {
   promise: Promise<T>;
@@ -140,6 +141,7 @@ export class Session implements LiveSession {
   #mediaAnchor: { audioMs: number; mediaMs: number } | undefined;
   #wireAnchor: { audioMs: number; mediaMs: number } | undefined;
   #ready = false;
+  #captionBoundaries = false;
   #reconnecting = false;
   #settling = false;
   #finished = false;
@@ -234,6 +236,20 @@ export class Session implements LiveSession {
     this.#dispatch({
       kind: 'position', audioMs, mediaMs, inputAudioMs: this.#inputAudioMs,
     });
+  }
+
+  boundary(audioMs: number): boolean {
+    if (!Number.isSafeInteger(audioMs) || audioMs < 0) {
+      throw new RangeError('Invalid caption boundary: a non-negative integer audio time is required');
+    }
+
+    if (this.#finished || this.#endRequested || !this.#captionBoundaries) {
+      return false;
+    }
+
+    this.#dispatch({ kind: 'boundary', audioMs, inputAudioMs: this.#inputAudioMs });
+
+    return true;
   }
 
   async end(): Promise<LiveEndResult> {
@@ -344,6 +360,18 @@ export class Session implements LiveSession {
   }
 
   #transmit(item: QueuedType): void {
+    if (item.kind === 'boundary') {
+      // a resumed connection may not support it: the boundary is dropped
+      if (this.#captionBoundaries) {
+        this.#socket?.send(JSON.stringify({
+          type: 'caption.boundary',
+          audio_ms: Math.max(0, Math.round(item.audioMs - item.inputAudioMs + this.#wireAudioMs)),
+        }));
+      }
+
+      return;
+    }
+
     if (item.kind === 'position') {
       this.#sendPosition(Math.max(this.#wireAnchor?.audioMs ?? 0,
         Math.round(item.audioMs - item.inputAudioMs + this.#wireAudioMs)), item.mediaMs);
@@ -477,6 +505,7 @@ export class Session implements LiveSession {
 
     this.#transcriptionId = payload.transcriptionId ?? this.#transcriptionId;
     this.#wireAudioMs = payload.offsetMs;
+    this.#captionBoundaries = payload.captionBoundaries === true;
     // Replay carries its own media timestamps, including any prefix removed by the ten-second buffer limit.
     this.#wireAnchor = undefined;
     this.#ready = true;

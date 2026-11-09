@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { test } from 'node:test';
+import { test, type TestContext } from 'node:test';
 import { createLiveClient } from '../../src/live/index.js';
 import { END_TIMEOUT_MS } from '../../src/live/session.js';
 import {
@@ -312,4 +312,45 @@ test('getAccessToken is called for every request, including each resume token re
     'POST /v1/live/sessions/ID/token',
   ]);
   assert.deepEqual(http.map(request => request.headers.authorization), ['Bearer tok-1', 'Bearer tok-2', 'Bearer tok-3']);
+});
+
+const resumeWithQueuedBoundary = async (t: TestContext, resumed: Record<string, unknown>) => {
+  const { server, pending } = await startManual(t, { sampleRate: 8000 });
+  server.start({ caption_boundaries: true });
+  const live = await pending;
+  // 8000 Hz: 1600 bytes is 100 ms
+  live.send(frameOf(1, 1600));
+  await until(() => server.frames.length === 1);
+  // a drop, not a reconnect event: the fake closes a replaced socket with 4010 before this test sends started
+  server.drop(1006);
+  await until(() => server.connections === 2 && server.socket?.readyState === 1);
+  const log: unknown[] = [];
+  server.socket?.on('message', (data: Buffer, isBinary: boolean) => {
+    log.push(isBinary ? data.byteLength : JSON.parse(data.toString('utf8')));
+  });
+  live.send(frameOf(2, 1600));
+  assert.equal(live.boundary(150), true);
+  live.send(frameOf(3, 1600));
+  server.start({ offset_ms: 4200, ...resumed });
+  await until(() => log.length >= 2);
+  await settleFor(30);
+
+  return { live, server, log };
+};
+
+test('rebases a queued boundary onto the wire clock after resume', async t => {
+  const { live, log } = await resumeWithQueuedBoundary(t, { caption_boundaries: true });
+
+  // input 150 ms lies 50 ms into the queued audio, which resumes at wire 4200
+  assert.deepEqual(log, [1600, { type: 'caption.boundary', audio_ms: 4250 }, 1600]);
+  await live.end();
+});
+
+test('drops queued boundaries after resume without support', async t => {
+  const { live, server, log } = await resumeWithQueuedBoundary(t, {});
+
+  assert.deepEqual(log, [1600, 1600]);
+  assert.equal(live.boundary(400), false);
+  await live.end();
+  assert.ok(server.commands.every(command => !command.includes('caption.boundary')));
 });

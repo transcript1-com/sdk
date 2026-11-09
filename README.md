@@ -169,7 +169,8 @@ const result = await live.end(); // { reason, transcriptionId, minutesCharged, c
 ```
 
 - `start()` resolves once the session has started, so no event is missed.
-- `live.lines` holds every line so far, in order. `live.finalize()` closes the current line, for example when the video pauses.
+- `live.lines` holds every line so far, sorted by `id`. Ids increase but may skip numbers. A provisional line with empty `text` withdraws that id: `live.lines` drops it, and the `line` event still arrives so you can remove your own row. `live.finalize()` closes the current line, for example when the video pauses.
+- When the `started` event carries `captionBoundaries: true`, `live.boundary(audioMs)` ends the current caption at that time on the audio clock you send, for example at a scene cut. It is sent in order with the audio and returns `false` without sending when the server does not support it or the session is ending (1.7.0 and newer).
 - Other events: `started`, `usage`, `warning`, `reconnecting`, `reconnected`, `ended` and `error`. `on()` returns a function that removes the handler.
 - A dropped connection reconnects by itself within 2 minutes, with backoff from 0.5 to 8 seconds, and the last 10 seconds of audio are sent again. If `end()` gets no answer from the server within 30 seconds, the SDK reads the session once and resolves with what it reports, or with reason `disconnected`.
 - A line already in the target language is not translated: its `translation` is its own text with `sameLanguage: true`, so show the line once. When the session's `language` equals `translateTo`, nothing is translated and the `started` event carries `sameLanguage: true`. Both are present only when `true` (1.5.1 and newer).

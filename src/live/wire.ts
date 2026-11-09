@@ -138,6 +138,10 @@ const parseStarted = (message: RecordType): ServerEvent => {
     payload.sameLanguage = true;
   }
 
+  if (message.caption_boundaries === true) {
+    payload.captionBoundaries = true;
+  }
+
   return { type: 'started', payload };
 };
 

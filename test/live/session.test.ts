@@ -1,8 +1,9 @@
 import assert from 'node:assert/strict';
-import { test } from 'node:test';
+import { test, type TestContext } from 'node:test';
 import WebSocketImpl from 'ws';
 import { expectRejection } from '../http/helpers.js';
 import { END_TIMEOUT_MS } from '../../src/live/session.js';
+import type { LiveEvents } from '../../src/live/types.js';
 import {
   concatFrames,
   createClient,
@@ -11,6 +12,7 @@ import {
   payloadsOf,
   pcm,
   startApi,
+  startManual,
   startSession,
   until,
 } from './helpers.js';
@@ -362,4 +364,89 @@ test('no live source file imports a node module', async () => {
     const source = await readFile(new URL(name, directory), 'utf8');
     assert.doesNotMatch(source, /from '(?:node:|fs|path|http|net|crypto)/, `${name} imports a node module`);
   }
+});
+
+test('an empty provisional line leaves lines but still reaches line handlers', async t => {
+  const started = await startSession(t);
+  const { live, server } = started;
+  server.emit(wireLine(0, 'first', true));
+  server.emit(wireLine(2, 'cut head'));
+  server.emit(wireLine(3, 'next'));
+  server.emit(wireLine(2, ''));
+  server.emit(wireLine(7, ''));
+  await until(() => payloadsOf(started, 'line').length === 5);
+
+  assert.deepEqual(live.lines.map(line => [line.id, line.text]), [[0, 'first'], [3, 'next']]);
+  assert.deepEqual(payloadsOf(started, 'line').slice(3).map(line => [line.id, line.text, line.final]), [[2, '', false], [7, '', false]]);
+
+  server.emit(wireLine(5, 'later'));
+  server.emit(wireLine(3, 'next line'));
+  server.emit(wireLine(9, '', true));
+  await until(() => payloadsOf(started, 'line').length === 8);
+
+  assert.deepEqual(live.lines.map(line => [line.id, line.text]), [[0, 'first'], [3, 'next line'], [5, 'later'], [9, '']]);
+});
+
+const startWithBoundaries = async (t: TestContext) => {
+  const { server, pending } = await startManual(t, { sampleRate: 8000 });
+  server.start({ caption_boundaries: true });
+  const live = await pending;
+  const started: Array<LiveEvents['started']> = [];
+  live.on('started', payload => {
+    started.push(payload);
+  });
+  const log: unknown[] = [];
+  server.socket?.on('message', (data: Buffer, isBinary: boolean) => {
+    log.push(isBinary ? data.byteLength : JSON.parse(data.toString('utf8')));
+  });
+
+  return {
+    live, server, started, log,
+  };
+};
+
+test('sends caption.boundary in order with audio only when advertised', async t => {
+  const { live, started, log } = await startWithBoundaries(t);
+  await until(() => started.length === 1);
+  assert.equal(started[0]?.captionBoundaries, true);
+  // 8000 Hz: 1600 bytes is 100 ms
+  live.send(frameOf(1, 1600));
+  assert.equal(live.boundary(150), true);
+  live.send(frameOf(2, 1600));
+  await until(() => log.length === 3);
+
+  assert.deepEqual(log, [1600, { type: 'caption.boundary', audio_ms: 150 }, 1600]);
+  await live.end();
+});
+
+test('returns false and sends nothing without the flag', async t => {
+  const started = await startSession(t);
+  await until(() => payloadsOf(started, 'started').length === 1);
+  assert.equal(payloadsOf(started, 'started')[0]?.captionBoundaries, undefined);
+  assert.equal(started.live.boundary(10), false);
+  await started.live.end();
+
+  assert.deepEqual(started.server.commands, ['{"type":"end"}']);
+});
+
+test('rejects a non-integer or negative boundary', async t => {
+  const { live, server } = await startWithBoundaries(t);
+  for (const value of [-1, 1.5, Number.NaN, Number.MAX_SAFE_INTEGER + 1]) {
+    assert.throws(() => {
+      live.boundary(value);
+    }, RangeError);
+  }
+
+  await live.end();
+  assert.deepEqual(server.commands, ['{"type":"end"}']);
+});
+
+test('returns false once the session is ending or finished', async t => {
+  const { live, server } = await startWithBoundaries(t);
+  const ending = live.end();
+  assert.equal(live.boundary(0), false);
+  await ending;
+  assert.equal(live.boundary(0), false);
+
+  assert.deepEqual(server.commands, ['{"type":"end"}']);
 });

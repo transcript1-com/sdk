@@ -53,6 +53,8 @@ export type LiveEvents = {
     offsetMs: number;
     // true when the session's language is its translateTo: no line is translated
     sameLanguage?: boolean;
+    // true when the server accepts boundary(): present only when true
+    captionBoundaries?: boolean;
   };
   line: LiveLine;
   usage: { connectedMs: number; audioMs: number; minutesCharged: number; minutesRemaining: number };
@@ -71,6 +73,8 @@ export type LiveSession = {
   send(audio: Int16Array | Uint8Array | ArrayBuffer): void;
   // Milliseconds on the session audio clock and video timeline, before the corresponding audio.
   position(audioMs: number, mediaMs: number): void;
+  // Closes the caption at this time on the session audio clock; false when the server does not support it or the session is ending.
+  boundary(audioMs: number): boolean;
   finalize(): void;
   end(): Promise<LiveEndResult>;
 };
