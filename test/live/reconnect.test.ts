@@ -354,3 +354,41 @@ test('drops queued boundaries after resume without support', async t => {
   await live.end();
   assert.ok(server.commands.every(command => !command.includes('caption.boundary')));
 });
+
+const resumeWithQueuedSwitch = async (t: TestContext, resumed: Record<string, unknown>) => {
+  const { server, pending } = await startManual(t, { sampleRate: 8000 });
+  server.start({ translation_switch: true });
+  const live = await pending;
+  live.send(frameOf(1, 1600));
+  await until(() => server.frames.length === 1);
+  server.drop(1006);
+  await until(() => server.connections === 2 && server.socket?.readyState === 1);
+  const log: unknown[] = [];
+  server.socket?.on('message', (data: Buffer, isBinary: boolean) => {
+    log.push(isBinary ? data.byteLength : JSON.parse(data.toString('utf8')));
+  });
+  live.send(frameOf(2, 1600));
+  assert.equal(live.translate('de'), true);
+  live.send(frameOf(3, 1600));
+  server.start({ offset_ms: 4200, ...resumed });
+  await until(() => log.length >= 2);
+  await settleFor(30);
+
+  return { live, server, log };
+};
+
+test('replays a queued translation switch in order after resume', async t => {
+  const { live, log } = await resumeWithQueuedSwitch(t, { translation_switch: true });
+
+  assert.deepEqual(log, [1600, { type: 'translation.set', translate_to: 'de' }, 1600]);
+  await live.end();
+});
+
+test('drops a queued translation switch after resume without support', async t => {
+  const { live, server, log } = await resumeWithQueuedSwitch(t, {});
+
+  assert.deepEqual(log, [1600, 1600]);
+  assert.equal(live.translate('fr'), false);
+  await live.end();
+  assert.ok(server.commands.every(command => !command.includes('translation.set')));
+});

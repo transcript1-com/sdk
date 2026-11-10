@@ -50,7 +50,8 @@ type QueuedType =
   | { kind: 'audio'; data: Uint8Array; mediaMs?: number }
   | { kind: 'finalize' }
   | { kind: 'position'; audioMs: number; mediaMs: number; inputAudioMs: number }
-  | { kind: 'boundary'; audioMs: number; inputAudioMs: number };
+  | { kind: 'boundary'; audioMs: number; inputAudioMs: number }
+  | { kind: 'translate'; target: string | null };
 
 type DeferredType<T> = {
   promise: Promise<T>;
@@ -142,6 +143,7 @@ export class Session implements LiveSession {
   #wireAnchor: { audioMs: number; mediaMs: number } | undefined;
   #ready = false;
   #captionBoundaries = false;
+  #translationSwitch = false;
   #reconnecting = false;
   #settling = false;
   #finished = false;
@@ -248,6 +250,20 @@ export class Session implements LiveSession {
     }
 
     this.#dispatch({ kind: 'boundary', audioMs, inputAudioMs: this.#inputAudioMs });
+
+    return true;
+  }
+
+  translate(target: string | null): boolean {
+    if (target !== null && (typeof target !== 'string' || target === '')) {
+      throw new TypeError('Invalid translation target: a non-empty language code or null is required');
+    }
+
+    if (this.#finished || this.#endRequested || !this.#translationSwitch) {
+      return false;
+    }
+
+    this.#dispatch({ kind: 'translate', target });
 
     return true;
   }
@@ -360,6 +376,15 @@ export class Session implements LiveSession {
   }
 
   #transmit(item: QueuedType): void {
+    if (item.kind === 'translate') {
+      // a resumed connection may not support it: the switch is dropped
+      if (this.#translationSwitch) {
+        this.#socket?.send(JSON.stringify({ type: 'translation.set', translate_to: item.target }));
+      }
+
+      return;
+    }
+
     if (item.kind === 'boundary') {
       // a resumed connection may not support it: the boundary is dropped
       if (this.#captionBoundaries) {
@@ -506,6 +531,7 @@ export class Session implements LiveSession {
     this.#transcriptionId = payload.transcriptionId ?? this.#transcriptionId;
     this.#wireAudioMs = payload.offsetMs;
     this.#captionBoundaries = payload.captionBoundaries === true;
+    this.#translationSwitch = payload.translationSwitch === true;
     // Replay carries its own media timestamps, including any prefix removed by the ten-second buffer limit.
     this.#wireAnchor = undefined;
     this.#ready = true;

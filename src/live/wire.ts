@@ -142,6 +142,10 @@ const parseStarted = (message: RecordType): ServerEvent => {
     payload.captionBoundaries = true;
   }
 
+  if (message.translation_switch === true) {
+    payload.translationSwitch = true;
+  }
+
   return { type: 'started', payload };
 };
 

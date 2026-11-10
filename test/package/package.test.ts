@@ -139,11 +139,11 @@ test('manifest links the repository and issue tracker', async () => {
   });
 });
 
-test('manifest is version 1.7.0 and names every supported platform', async () => {
+test('manifest is version 1.8.0 and names every supported platform', async () => {
   const manifest = JSON.parse(await readFile(join(root, 'package.json'), 'utf8')) as { version: string; description: string; keywords: string[] };
   const platforms = ['YouTube', 'X', 'TikTok', 'Instagram', 'Facebook', 'Bluesky', 'Twitch', 'Dailymotion', 'Pinterest', 'LinkedIn', 'Snapchat'];
 
-  assert.equal(manifest.version, '1.7.0');
+  assert.equal(manifest.version, '1.8.0');
   for (const platform of platforms) {
     assert.ok(manifest.description.includes(platform), platform);
   }

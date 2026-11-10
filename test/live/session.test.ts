@@ -450,3 +450,67 @@ test('returns false once the session is ending or finished', async t => {
 
   assert.deepEqual(server.commands, ['{"type":"end"}']);
 });
+
+const startWithSwitch = async (t: TestContext) => {
+  const { server, pending } = await startManual(t, { sampleRate: 8000 });
+  server.start({ translation_switch: true });
+  const live = await pending;
+  const started: Array<LiveEvents['started']> = [];
+  live.on('started', payload => {
+    started.push(payload);
+  });
+  const log: unknown[] = [];
+  server.socket?.on('message', (data: Buffer, isBinary: boolean) => {
+    log.push(isBinary ? data.byteLength : JSON.parse(data.toString('utf8')));
+  });
+
+  return {
+    live, server, started, log,
+  };
+};
+
+test('sends translation.set in order with audio only when advertised', async t => {
+  const { live, started, log } = await startWithSwitch(t);
+  await until(() => started.length === 1);
+  assert.equal(started[0]?.translationSwitch, true);
+  live.send(frameOf(1, 1600));
+  assert.equal(live.translate('pl'), true);
+  live.send(frameOf(2, 1600));
+  assert.equal(live.translate(null), true);
+  await until(() => log.length === 4);
+
+  assert.deepEqual(log, [1600, { type: 'translation.set', translate_to: 'pl' }, 1600, { type: 'translation.set', translate_to: null }]);
+  await live.end();
+});
+
+test('translate returns false and sends nothing without the flag', async t => {
+  const started = await startSession(t);
+  await until(() => payloadsOf(started, 'started').length === 1);
+  assert.equal(payloadsOf(started, 'started')[0]?.translationSwitch, undefined);
+  assert.equal(started.live.translate('pl'), false);
+  await started.live.end();
+
+  assert.deepEqual(started.server.commands, ['{"type":"end"}']);
+});
+
+test('translate rejects anything but null or a non-empty string', async t => {
+  const { live, server } = await startWithSwitch(t);
+  for (const value of ['', undefined, 1, {}]) {
+    assert.throws(() => {
+      live.translate(value as string);
+    }, TypeError);
+  }
+
+  await live.end();
+  assert.deepEqual(server.commands, ['{"type":"end"}']);
+});
+
+test('translate returns false once the session is ending or finished', async t => {
+  const { live, server } = await startWithSwitch(t);
+  const ending = live.end();
+  assert.equal(live.translate('pl'), false);
+  await ending;
+  assert.equal(live.translate(null), false);
+
+  assert.deepEqual(server.commands, ['{"type":"end"}']);
+});

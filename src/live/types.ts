@@ -55,6 +55,8 @@ export type LiveEvents = {
     sameLanguage?: boolean;
     // true when the server accepts boundary(): present only when true
     captionBoundaries?: boolean;
+    // true when the server accepts translate(): present only when true
+    translationSwitch?: boolean;
   };
   line: LiveLine;
   usage: { connectedMs: number; audioMs: number; minutesCharged: number; minutesRemaining: number };
@@ -75,6 +77,8 @@ export type LiveSession = {
   position(audioMs: number, mediaMs: number): void;
   // Closes the caption at this time on the session audio clock; false when the server does not support it or the session is ending.
   boundary(audioMs: number): boolean;
+  // Changes the translation language (null stops translating); true means queued or sent, not applied.
+  translate(target: string | null): boolean;
   finalize(): void;
   end(): Promise<LiveEndResult>;
 };
