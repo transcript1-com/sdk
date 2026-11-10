@@ -60,7 +60,7 @@ export type LiveEvents = {
   };
   line: LiveLine;
   usage: { connectedMs: number; audioMs: number; minutesCharged: number; minutesRemaining: number };
-  warning: { code: 'balance_low' | 'audio_dropped' | 'idle_timeout_soon'; message: string };
+  warning: { code: 'balance_low' | 'audio_dropped' | 'idle_timeout_soon' | 'unsupported_translation'; message: string };
   reconnecting: { attempt: number };
   reconnected: Record<string, never>;
   ended: LiveEndResult;

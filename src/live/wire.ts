@@ -45,6 +45,7 @@ const WARNING_MESSAGES: Record<LiveEvents['warning']['code'], string> = {
   balance_low: 'Your balance will not cover the next minute of this session',
   audio_dropped: 'Audio sent before the connection was ready was dropped',
   idle_timeout_soon: 'No audio is arriving; the session will end soon',
+  unsupported_translation: 'The server cannot translate into that language',
 };
 
 const isRecord = (value: unknown): value is RecordType => {

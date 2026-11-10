@@ -514,3 +514,14 @@ test('translate returns false once the session is ending or finished', async t =
 
   assert.deepEqual(server.commands, ['{"type":"end"}']);
 });
+
+test('an unsupported_translation warning reaches warning handlers with its typed code', async t => {
+  const started = await startSession(t);
+  started.server.emit({ type: 'warning', code: 'unsupported_translation' });
+  await until(() => payloadsOf(started, 'warning').length === 1);
+
+  const [warning] = payloadsOf(started, 'warning');
+  const code: LiveEvents['warning']['code'] = 'unsupported_translation';
+  assert.equal(warning?.code, code);
+  assert.ok(warning?.message);
+});
